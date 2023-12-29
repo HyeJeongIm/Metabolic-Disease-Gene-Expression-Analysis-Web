@@ -11,6 +11,7 @@ from sklearn.datasets import load_iris
 # library
 import matplotlib.pyplot as plt
 import seaborn as sns
+import plotly.graph_objects as go
 
 def draw_heatmap_plot(iris_df):
     numeric_data = iris_df.select_dtypes(include=[np.number])
@@ -147,6 +148,7 @@ def write_user_page(iris_df):
 ## 01. main page
 def write_main_page():
     st.title('Metabolic Disease Gene Expression Analysis Web')
+    st.markdown("\n")
     st.markdown(" 이 웹 어플리케이션은 **Streamlit**을 활용하여 간단한 시각화 툴을 그려보는 것을 테스트 합니다.")
     st.markdown("\n") 
     st.markdown("왼쪽 Menu tab을 이용하여 사용자가 원하는 page를 선택할 수 있습니다.")
@@ -155,6 +157,7 @@ def write_main_page():
 
 ## layout
 def create_layout(iris):
+    # 사이드바 로고
     container = st.sidebar.container()
     container.image('./images/logo.png', width=75)
     with st.sidebar:
@@ -162,10 +165,10 @@ def create_layout(iris):
                             icons=['house', 'person', 'bar-chart', 'clipboard-data'],
                             menu_icon="app-indicator", default_index=0,
                             styles={
-            "container": {"padding": "4!important", "background-color": "#a0a0a0"},
-            "icon": {"color": "white", "font-size": "25px"},
-            "nav-link": {"font-size": "16px", "text-align": "left", "margin":"10px", "--hover-color": "#a0a0a0"},
-            "nav-link-selected": {"background-color": "#014f9e"},
+            "container": {"padding": "4!important", "background-color": "#fafafa"},
+            "icon": {"color": "black", "font-size": "25px"},
+            "nav-link": {"font-size": "16px", "text-align": "left", "margin":"10px", "--hover-color": "#fafafa"},
+            "nav-link-selected": {"background-color": "#014f9e", "icon-color": "white"},
         }
         )       
     
