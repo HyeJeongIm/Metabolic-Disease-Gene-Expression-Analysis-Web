@@ -11,6 +11,7 @@ from sklearn.datasets import load_iris
 # library
 import matplotlib.pyplot as plt
 import seaborn as sns
+import plotly.graph_objects as go
 
 def draw_heatmap_plot(iris_df):
     numeric_data = iris_df.select_dtypes(include=[np.number])
@@ -84,27 +85,27 @@ def draw_dataframe(iris_df):
 ## 04. analysis page
 def write_analysis_page(iris_df):
     # 탭 생성
-    tab_titles = ['table', 'bar_plot', 'diagram', 'scatter', 'heatmap']
+    tab_titles = ['Table', 'Bar_plot', 'Diagram', 'Scatter', 'Heatmap']
     tabs = st.tabs(tab_titles)
     
     with tabs[0]:
-        st.header('table')
+        st.header('Table')
         draw_dataframe(iris_df)
     
     with tabs[1]:
-        st.header('bar_plot')
+        st.header('Bar_plot')
         draw_bar_plot(iris_df)
 
     with tabs[2]:
-        st.header('diagram')
+        st.header('Diagram')
         # st.line_chart(data)
         
     with tabs[3]:
-        st.header('scatter')
+        st.header('Scatter')
         draw_scatter_plot(iris_df)
     
     with tabs[4]:
-        st.header('heatmap')
+        st.header('Heatmap')
         draw_heatmap_plot(iris_df)
 
 ## 03. data page
@@ -132,7 +133,7 @@ def write_user_page(iris_df):
     # select box
     st.subheader('01. Species')
     option = st.selectbox('하나만 선택 가능',
-					  ('Human', 'Mouse', 'test'))
+					  ('Human', 'Mouse'))
     
     # multi select box
     st.subheader('02. Developmental Stage')
@@ -147,29 +148,27 @@ def write_user_page(iris_df):
 ## 01. main page
 def write_main_page():
     st.title('Metabolic Disease Gene Expression Analysis Web')
-    st.write("""
-             
-                이 웹 어플리케이션은 **Streamlit**을 활용하여 간단한 시각화 툴을 그려보는 것을 테스트 합니다.
-                
-
-                왼쪽 Menu tab을 이용하여 사용자가 원하는 page를 선택할 수 있습니다.
-                
-
-                간단한 시각화 결과는 _*Analysis page*_ 를 확인해주세요.
-                
-                """)
+    st.markdown("\n")
+    st.markdown(" 이 웹 어플리케이션은 **Streamlit**을 활용하여 간단한 시각화 툴을 그려보는 것을 테스트 합니다.")
+    st.markdown("\n") 
+    st.markdown("왼쪽 Menu tab을 이용하여 사용자가 원하는 page를 선택할 수 있습니다.")
+    st.markdown("\n")
+    st.markdown("간단한 시각화 결과는 _*Analysis page*_ 를 확인해주세요.")
 
 ## layout
 def create_layout(iris):
+    # 사이드바 로고
+    container = st.sidebar.container()
+    container.image('./images/logo.png', width=75)
     with st.sidebar:
         page = option_menu("Menu", ["Main", "User Inputs", "Data Display", 'Analysis'],
-                            icons=['house', 'person', 'bi bi-robot', 'bi bi-robot'],
+                            icons=['house', 'person', 'bar-chart', 'clipboard-data'],
                             menu_icon="app-indicator", default_index=0,
                             styles={
             "container": {"padding": "4!important", "background-color": "#fafafa"},
             "icon": {"color": "black", "font-size": "25px"},
             "nav-link": {"font-size": "16px", "text-align": "left", "margin":"10px", "--hover-color": "#fafafa"},
-            "nav-link-selected": {"background-color": "#08c7b4"},
+            "nav-link-selected": {"background-color": "#014f9e", "icon-color": "white"},
         }
         )       
     
