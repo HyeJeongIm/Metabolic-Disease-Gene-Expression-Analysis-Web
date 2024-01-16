@@ -1,0 +1,111 @@
+import pandas as pd
+import numpy as np
+
+# streamlit
+import streamlit as st
+from streamlit_option_menu import option_menu
+
+# library
+import matplotlib.pyplot as plt
+import seaborn as sns
+import plotly.graph_objects as go
+
+import os
+
+import streamlit as st
+def load_data(file_path, name):
+    
+    df = pd.read_csv(file_path, sep='\t')
+    
+    one_gene_df = df[df['Gene name'] == name].drop('Gene name', axis=1).T
+    one_gene_df.columns = [name]
+
+    return one_gene_df
+
+def plot_data(df, file, name):
+
+    plt.figure(figsize=(10, 6))
+    sns.boxplot(data=df)
+    plt.ylabel("Expression Level")
+    
+    st.pyplot(plt)
+    
+def create_box_plot_page(name):
+    folder_path = './data/Gene Expression'
+    
+    files = os.listdir(folder_path)
+    
+    for file in files:
+        file_path = os.path.join(folder_path, file)
+        df = load_data(file_path, name)
+        st.subheader("Box Plot of " + file[:-4] + "_" + name)
+
+        plot_data(df, file[:-4], name)
+
+
+def write_main_page():
+    
+    if 'stage' not in st.session_state:
+        st.session_state.stage = 0
+
+    def set_state(i):
+        st.session_state.stage = i
+
+    if st.session_state.stage == 0:
+        st.button('유전자 1개 검색', on_click=set_state, args=[1])
+        
+    if st.session_state.stage >= 1:
+        st.markdown("## 🧬 유전자를 입력해주세요")
+        st.markdown(
+        """
+        <style>
+        .stTextInput > div > div > input {
+            border: 4px solid #ff4b4b; /* 빨간색 테두리 적용 */
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+        )
+        
+        name = st.text_input('', on_change=set_state, args=[2], key="gene_input")
+
+        col1, col2 = st.columns([1, 4])
+        with col1:
+            st.button('Back', on_click=set_state, args=[0])
+            st.button('Next', on_click=set_state, args=[2])    
+
+    if st.session_state.stage >= 2:
+        
+        create_box_plot_page(name)
+        st.button('Back', on_click=set_state, args=[1])
+
+def create_layout():
+    with st.sidebar:
+        page = option_menu("Menu", ["Main", "User Inputs", "Data Display", 'Analysis'],
+                            icons=['house', 'person', 'bi bi-robot', 'bi bi-robot'],
+                            menu_icon="app-indicator", default_index=0,
+                            styles={
+            "container": {"padding": "4!important", "background-color": "#fafafa"},
+            "icon": {"color": "black", "font-size": "25px"},
+            "nav-link": {"font-size": "16px", "text-align": "left", "margin":"10px", "--hover-color": "#fafafa"},
+            "nav-link-selected": {"background-color": "#08c7b4"},
+        }
+        )
+        
+    if page == 'Main':
+        write_main_page()
+        pass
+    if page == 'User Inputs':
+        pass
+    elif page == 'Data Display':
+        pass
+    elif page == 'Analysis':
+        pass
+    
+
+def main():
+    create_layout()    
+
+if __name__ == "__main__":
+    main()
+
