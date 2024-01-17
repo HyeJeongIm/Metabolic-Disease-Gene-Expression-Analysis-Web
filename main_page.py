@@ -22,19 +22,6 @@ def create_search_bar():
                 st.session_state['gene_name'] = '' 
                 st.experimental_rerun()  
 
-def create_advanced_search_bar():
-    with st.expander("Advanced Search"):
-        gene_name = st.text_input('Enter the gene name')
-
-def create_tabs():
-    tab1, tab2, tab3, tab4, tab5 = st.tabs(["RNA expression", "DNA methylation", "Histone modification", "Chromatin accessibility", "DEGs analysis"])
-    
-    with tab1:
-        st.write("RNA expression data visualization...")
-    
-    with tab2:
-        st.write("DNA methylation data visualization...")
-
 def create_data_statistics():
     st.subheader('Data statistics')
     st.image('images/test_image.jpg')
@@ -43,5 +30,4 @@ def create_data_statistics():
 def write_main_page():
     create_header()
     create_search_bar()
-    create_tabs()
     create_data_statistics()
