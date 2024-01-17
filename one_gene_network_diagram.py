@@ -1,59 +1,47 @@
-# library
 import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
-import plotly.graph_objects as go
-
-# streamlit
-import streamlit as st
-from streamlit_option_menu import option_menu
-
-# file load
-import os
-
-# network diagram
-import networkx as nx
 from pyvis.network import Network
 import streamlit.components.v1 as components
-import one_gene_search, one_gene_network_diagram
 
 def load_network_data(file_path, name):
+    data = pd.read_csv(file_path, sep='\t')
+    df = pd.DataFrame(data)
+
+    df_interaction = df[['Official Symbol Interactor A', 'Official Symbol Interactor B']]
+
+    result = df_interaction[(df_interaction['Official Symbol Interactor A'] == name) | (df_interaction['Official Symbol Interactor B'] == name)]
+
+    return result
+
+def plot_pyvis(df):
+    net = Network(
+        notebook=True,
+        directed=False,
+        )
     
-    df = pd.read_csv(file_path, sep='\t')
-    
-    filtered_df_A = df[df['Official Symbol Interactor A'] == name]
-    interactor_b_values = filtered_df_A['Official Symbol Interactor B'].tolist()
-    
-    filtered_df_B = df[df['Official Symbol Interactor B'] == name]
-    interactor_a_values = filtered_df_B['Official Symbol Interactor A'].tolist()
-    
-    interactor_list = list(set(interactor_a_values + interactor_b_values))
-    
-    return interactor_list
+    sources = df['Official Symbol Interactor A']
+    targets = df['Official Symbol Interactor B']
+
+    edge_data = zip(sources, targets)
+
+    for e in edge_data:
+        src = e[0]
+        dst = e[1]
+
+        net.add_node(src, src, title=src)
+        net.add_node(dst, dst, title=dst)
+        net.add_edge(src, dst)
+
+    net.show_buttons(filter_=['physics'])
+    net.show("pyvis_net_graph.html")
+
+    # Streamlit 앱에 네트워크 표시
+    HtmlFile = open('pyvis_net_graph.html', 'r', encoding='utf-8')
+    source_code = HtmlFile.read() 
+    components.html(source_code, width=1000, height=5000)
 
 def create_network_page(gene_name):
     file_path = 'data\Gene-Gene Interaction\BIOGRID-ORGANISM-Homo_sapiens-4.4.229.tab3.txt'
-    
-    # 상호작용 유전자 리스트
-    interactor_list = load_network_data(file_path, gene_name)
-    
-    # NetworkX 그래프 생성
-    G = nx.Graph()
 
-    # 중심 유전자를 그래프에 추가
-    G.add_node(gene_name, size=15, color='red')
-
-    for interactor in interactor_list:
-        G.add_node(interactor, size=15, color='blue')
-        G.add_edge(gene_name, interactor)
-
-    # PyVis 네트워크 생성
-    nt = Network('700px', '300px', notebook=True)  # 스트림릿에서는 notebook 모드를 True로 설정
-    nt.from_nx(G)
-    nt.show('gene_network.html')
-
-    # Streamlit 앱에 네트워크 표시
-    HtmlFile = open('gene_network.html', 'r', encoding='utf-8')
-    source_code = HtmlFile.read() 
-    components.html(source_code, width=10000, height=5000)
+    df_inter = load_network_data(file_path, gene_name)
+ 
+    plot_pyvis(df_inter)
