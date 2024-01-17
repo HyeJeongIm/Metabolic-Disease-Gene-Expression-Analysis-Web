@@ -36,7 +36,7 @@ def plot_pyvis(df):
 
     HtmlFile = open('pyvis_net_graph.html', 'r', encoding='utf-8')
     source_code = HtmlFile.read() 
-    components.html(source_code, width=1000, height=5000)
+    components.html(source_code, width=670, height=1050)
 
 def create_network_page(gene_name):
     file_path = 'data\Gene-Gene Interaction\BIOGRID-ORGANISM-Homo_sapiens-4.4.229.tab3.txt'
