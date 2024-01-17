@@ -3,7 +3,6 @@ import one_gene_network_diagram, main_page
 
 def create_search_bar_network():
     with st.expander("Search"):
-        # 유전자 이름 입력
         gene_name = st.text_input('Enter the gene name', key="gene_input")
 
 def network_page():
