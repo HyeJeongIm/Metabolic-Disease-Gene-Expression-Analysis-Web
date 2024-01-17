@@ -34,7 +34,6 @@ def plot_pyvis(df):
     net.show_buttons(filter_=['physics'])
     net.show("pyvis_net_graph.html")
 
-    # Streamlit 앱에 네트워크 표시
     HtmlFile = open('pyvis_net_graph.html', 'r', encoding='utf-8')
     source_code = HtmlFile.read() 
     components.html(source_code, width=1000, height=5000)
