@@ -1,46 +1,40 @@
-# library
 import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
+import plotly.express as px
 import streamlit as st
 import os
 
 def load_data(file_path, name):
-    
     df = pd.read_csv(file_path, sep='\t')
-    
     one_gene_df = df[df['Gene name'] == name].drop('Gene name', axis=1).T
     one_gene_df.columns = [name]
-
     return one_gene_df
 
-def plot_data(df, name):
-    fig, axes = plt.subplots(3, 3, figsize=(15, 15))  # 3x3 그리드로 설정
-    axes = axes.flatten()
-    
-    for i, (ax, (file, data)) in enumerate(zip(axes, df.items())):
-        sns.boxplot(data=data, ax=ax)
-        ax.set_title(f"Box Plot of {file}")
-        ax.set_ylabel("Expression Level")
-
-    for j in range(i+1, 9):
-        fig.delaxes(axes[j])
-        
-    st.pyplot(fig)
+def plot_data(combined_df):
+    fig = px.box(combined_df, x='file', y='value', color='file', 
+                 labels={'value': 'Expression Level', 'file': 'Sample'})
+    fig.update_layout(showlegend=False)  
+    st.plotly_chart(fig, use_container_width=True)
 
 def create_box_plot_page(name):
     folder_path = './data/Gene Expression'
     files = os.listdir(folder_path)
-    dfs = {}  
+    
+    dfs = []
     
     for file in files:
         file_path = os.path.join(folder_path, file)
         df = load_data(file_path, name)
         if not df.empty:
-            dfs[file[:-4]] = df  # 파일 확장자를 제외한 이름을 키로 사용
-
-    # 모든 데이터프레임을 그리드에 표시
+            # 'GeneExpression_' 접두사를 제거하고 'file' 열 추가
+            clean_file_name = file.replace('GeneExpression_', '')[:-4]  # 확장자 제외
+            # melt 함수를 사용하여 long-format 데이터로 변환
+            melted_df = df.melt(var_name='sample', value_name='value')
+            melted_df['file'] = clean_file_name  # 파일명을 열에 추가
+            dfs.append(melted_df)
+    
+    # 결합된 데이터프레임 생성
     if dfs:
-        plot_data(dfs, name)
+        combined_df = pd.concat(dfs, ignore_index=True)
+        plot_data(combined_df)
     else:
         st.error(f"No data available for {name} in any of the files.")
