@@ -60,32 +60,46 @@ def plot_pyvis(df, gene_name):
     source_code = HtmlFile.read() 
     components.html(source_code, width=670, height=1070)
 
-def show_box_plot(name):
+def show_box_plot(name, z_score=False):
     st.subheader('Box Plot')
-
-    folder_path = './data/Gene Expression'
+    
+    if st.button('Raw'):
+        st.session_state['z_score'] = False
+    if st.button('Z-Score'):
+        st.session_state['z_score'] = True
+        
+    if z_score or st.session_state.get('z_score'):
+        folder_path = './data/Gene Expression/Z_Score'
+    else:
+        folder_path = './data/Gene Expression/Raw'
     files = os.listdir(folder_path)
-    
+
     dfs = []
-    
+
     for file in files:
         file_path = os.path.join(folder_path, file)
         df = load_data(file_path, name)
         if not df.empty:
-            # 'GeneExpression_' 접두사를 제거하고 'file' 열 추가
-            clean_file_name = file.replace('GeneExpression_', '')[:-4]  # 확장자 제외
-            # melt 함수를 사용하여 long-format 데이터로 변환
-            melted_df = df.melt(var_name='sample', value_name='value')
-            melted_df['file'] = clean_file_name  # 파일명을 열에 추가
-            dfs.append(melted_df)
-    
+            if 'Z_Score' in folder_path :
+                clean_file_name = file.replace('GeneExpressionZ_', '')[:-4]  
+                melted_df = df.melt(var_name='sample', value_name='value')
+                melted_df['file'] = clean_file_name  
+                dfs.append(melted_df)
+                
+            else:
+                clean_file_name = file.replace('GeneExpression_', '')[:-4]  # 확장자 제외
+                # melt 함수를 사용하여 long-format 데이터로 변환
+                melted_df = df.melt(var_name='sample', value_name='value')
+                melted_df['file'] = clean_file_name  # 파일명을 열에 추가
+                dfs.append(melted_df) 
+
     # 결합된 데이터프레임 생성
     if dfs:
         combined_df = pd.concat(dfs, ignore_index=True)
         plot_data(combined_df)
     else:
         st.error(f"No data available for {name} in any of the files.")
-        
+      
 def show_network_diagram(gene_name):
     st.subheader('Network Diagram')
 
