@@ -1,5 +1,5 @@
 import streamlit as st
-import one_gene_search, network_diagram_page
+import one_gene_search
 
 def create_header():
     st.image('images/logo.png', width=100)

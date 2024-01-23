@@ -1,6 +1,6 @@
 import streamlit as st
 from streamlit_option_menu import option_menu
-import main_page, network_diagram_page
+import main_page
 
 def create_layout():
     # 사이드 바 로고
@@ -24,7 +24,7 @@ def create_layout():
     if page == 'User Inputs':
         pass
     elif page == 'Network Diagram':
-        network_diagram_page.network_page()
+        pass
     elif page == 'Analysis':
         pass
 
