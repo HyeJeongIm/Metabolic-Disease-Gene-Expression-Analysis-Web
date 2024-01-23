@@ -42,15 +42,15 @@ def plot_pyvis(df, gene_name):
 
         # 찾는 유전자 빨간색으로 표현하기
         if src == gene_name:
-            net.add_node(src, label=src, title=src, color='red')
+            net.add_node(src, label=src, title=src, color='red', size=20)
         else:
-            net.add_node(src, label=src, title=src)
+            net.add_node(src, label=src, title=src, size=15)
         if dst == gene_name:
-            net.add_node(dst, label=dst, title=dst, color='red')
+            net.add_node(dst, label=dst, title=dst, color='red', size=20)
         else:
-            net.add_node(dst, label=dst, title=dst)
+            net.add_node(dst, label=dst, title=dst, size=15)
 
-        net.add_edge(src, dst, color='black')
+        net.add_edge(src, dst, color='skyblue')
 
     net.show_buttons(filter_=['physics'])
     net.show("pyvis_net_graph.html")
