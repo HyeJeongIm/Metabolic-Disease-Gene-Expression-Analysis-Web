@@ -5,12 +5,14 @@ import streamlit.components.v1 as components
 import streamlit as st
 import os
 
+@st.cache_data
 def load_data(file_path, name):
     df = pd.read_csv(file_path, sep='\t')
     one_gene_df = df[df['Gene name'] == name].drop('Gene name', axis=1).T
     one_gene_df.columns = [name]
     return one_gene_df
 
+@st.cache_data
 def load_network_data(file_path, name):
     data = pd.read_csv(file_path, sep='\t')
     df = pd.DataFrame(data)
@@ -26,7 +28,7 @@ def plot_data(combined_df):
                  labels={'value': 'Expression Level', 'file': 'Sample'})
     fig.update_layout(showlegend=False)  
     st.plotly_chart(fig, use_container_width=True)
-    
+      
 def plot_pyvis(df, gene_name):
     net = Network(
         notebook=True,
@@ -59,7 +61,7 @@ def plot_pyvis(df, gene_name):
     HtmlFile = open('pyvis_net_graph.html', 'r', encoding='utf-8')
     source_code = HtmlFile.read() 
     components.html(source_code, width=670, height=1070)
-
+    
 def show_box_plot(name, z_score=False):
     st.subheader('Box Plot')
 
@@ -136,7 +138,7 @@ def show_box_plot(name, z_score=False):
         plot_data(combined_df)
     else:
         st.error(f"No data available for {name} in any of the files.")
-      
+
 def show_network_diagram(gene_name):
     st.subheader('Network Diagram')
 
