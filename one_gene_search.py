@@ -62,18 +62,55 @@ def plot_pyvis(df, gene_name):
 
 def show_box_plot(name, z_score=False):
     st.subheader('Box Plot')
-    
-    if st.button('Raw'):
-        st.session_state['z_score'] = False
-    if st.button('Z-Score'):
-        st.session_state['z_score'] = True
-        
-    if z_score or st.session_state.get('z_score'):
-        folder_path = './data/Gene Expression/Z_Score'
-    else:
-        folder_path = './data/Gene Expression/Raw'
-    files = os.listdir(folder_path)
 
+    st.write("""
+    <style>
+        div.stRadio > div {
+            display: flex;
+            justify-content: flex-start;
+            flex-direction: row;
+            padding: 0.75rem 0;
+        }
+        div.stRadio > div > label {
+            background-color: #e1e1e1; /* 밝은 회색 배경 */
+            color: #333; /* 어두운 글자색 */
+            padding: 5px 20px; /* 패딩 축소 */
+            border-radius: 15px; /* 더 둥근 모서리 */
+            border: 2px solid #e1e1e1; /* 테두리 색상 일치 */
+            margin: 0 2px; /* 여백 유지 */
+            transition: all 0.3s; /* 부드러운 전환 효과 */
+            cursor: pointer; /* 마우스 오버 시 커서 변경 */
+        }
+        div.stRadio > div > label:hover {
+            background-color: #c8c8c8; /* 호버 시 배경색 */
+            border-color: #c8c8c8; /* 호버 시 테두리 색상 */
+        }
+        div.stRadio > div > label:active {
+            color: red; /* 클릭 시 글자색 */
+        }
+        div.stRadio > div > label > input[type="radio"] {
+            display: none; /* 라디오 버튼 숨김 */
+        }
+        div.stRadio > div > label > input[type="radio"]:checked + div {
+            color: red; /* 선택된 항목
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # 라디오 버튼으로 변환 옵션 선택
+    transform = st.radio(
+        "Expression transform:", 
+        ['Raw', 'Z-Score'], 
+        index=int(st.session_state.get('z_score', False))
+    )
+
+    # 선택된 변환 옵션에 따라 세션 상태를 설정
+    st.session_state['z_score'] = transform == 'Z-Score'
+
+    # 데이터 경로 설정
+    folder_path = './data/Gene Expression/' + ('Z_Score' if st.session_state['z_score'] else 'Raw')
+    
+    files = os.listdir(folder_path)
     dfs = []
 
     for file in files:
