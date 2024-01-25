@@ -2,24 +2,25 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import os
+import numpy as np
 
 def create_header():
     st.title('DEG Analysis')
 
 def create_search_area():
     # selectbox를 위한 값 선언
-    sample_class = ['Adipose_LH', 'Adipose_OH', 'Adipose_OD',
-              'Liver_LH', 'Liver_OH', 'Liver_OD',
-              'Muscle_LH', 'Muscle_OH', 'Muscle_OD']
+    sample_class = ['AdiposeLH', 'AdiposeOH', 'AdiposeOD',
+              'LiverLH', 'LiverOH', 'LiverOD',
+              'MuscleLH', 'MuscleOH', 'MuscleOD']
     p_value = [0.05, 0.01, 0.001]
-    fold_change = ['1.5 fold', '2 fold', '3 fold']
+    fold_change = [1.5, 2, 3]
     pathway = ['Pathway', 'Go', 'Hallmark']
 
     # search box들
-    sample_choice = st.multiselect('Choose the samples', sample_class, max_selections=2, key='sample_input')
+    sample_choice = st.multiselect('Choose two groups', sample_class, max_selections=2, key='sample_input')
     p_value_choice = st.selectbox('Choose the p-value', p_value, key='p_value_input')
     fold_change_choice = st.selectbox('Choose the Fold-change', fold_change, key='fold_change_input')
-    pathway_choice = st.selectbox('Choose the pathway', pathway, key='pathway_input')
+    pathway_choice = st.multiselect('Choose the pathway', pathway, key='pathway_input')
 
     if st.button('Search'):
         plot_pca(sample_choice)
@@ -66,10 +67,51 @@ def plot_pca(sample_choice):
     st.plotly_chart(fig)
 
 def plot_volcano(sample_choice, p_value_choice, fold_change_choice):
-    st.write(sample_choice)
-    st.write(p_value_choice)
-    st.write(fold_change_choice)
-        
+    # PCA에 사용할 데이터 파일 불러오기
+    coordinate_path = f'./data/DEG Result/DEGResult_{sample_choice[0]}_VS_{sample_choice[1]}.txt'
+    
+    # csv로 읽기
+    data_coordinate = pd.read_csv(coordinate_path, sep='\t')
+    df = pd.DataFrame(data_coordinate)
+
+    # p-value에 -log10 적용하기
+    df['FDR-adjusted p-value'] = -np.log10(df['FDR-adjusted p-value'])
+
+    # volcano 그리기
+    st.subheader('Volcano Plot')
+    fig = px.scatter(
+        data_frame=df, 
+        x='Log2FoldChange', 
+        y='FDR-adjusted p-value',  
+        color_discrete_sequence = px.colors.qualitative.Pastel1,
+        )
+    fig.add_shape(
+    dict(
+        type='line',
+        x0=-np.log10(p_value_choice),
+        x1=-np.log10(p_value_choice),
+        y0=0,
+        y1=max(df['FDR-adjusted p-value']),
+        line=dict(color='gray', dash='dash')
+        )
+    )
+    fig.add_shape(
+        dict(
+            type='line',
+            x0=-np.log2(fold_change_choice),
+            x1=-np.log2(fold_change_choice),
+            y0=0,
+            y1=max(df['FDR-adjusted p-value']),
+            line=dict(color='gray', dash='dash')
+        )
+    )
+    fig.update_layout(
+        xaxis_title="Log2 fold change",
+        yaxis_title="-Log10 adjusted P",
+    )
+    st.plotly_chart(fig)
+
+
 def write_deg_page():
     create_header()
     create_search_area()
