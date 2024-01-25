@@ -18,7 +18,7 @@ def create_search_area():
     pathway = ['Pathway', 'Go', 'Hallmark']
 
     # search box들
-    sample_choice = st.multiselect('Choose the samples', sample_class, key='sample_input')
+    sample_choice = st.multiselect('Choose the samples', sample_class, max_selections=2, key='sample_input')
     p_value_choice = st.selectbox('Choose the p-value', p_value, key='p_value_input')
     fold_change_choice = st.selectbox('Choose the Fold-change', fold_change, key='fold_change_input')
     pathway_choice = st.selectbox('Choose the pathway', pathway, key='pathway_input')
@@ -26,6 +26,15 @@ def create_search_area():
     if st.button('Search'):
         plot_pca(sample_choice)
         plot_volcano(sample_choice, p_value_choice, fold_change_choice)
+
+    # session_state 때문에 죽여둠
+    # if st.button('Search'):
+    #     st.session_state['search_pressed'] = True
+        
+    # 검색이 수행된 후에만 수행
+    # if 'search_pressed' in st.session_state and st.session_state['search_pressed']:
+    #     plot_pca(sample_choice)
+    #     plot_volcano(sample_choice, p_value_choice, fold_change_choice)
 
 def plot_pca(sample_choice):
     # PCA에 사용할 데이터 파일 불러오기
