@@ -68,14 +68,22 @@ def plot_pca(sample_choice):
 
 def plot_volcano(sample_choice, p_value_choice, fold_change_choice):
     # PCA에 사용할 데이터 파일 불러오기
-    coordinate_path = f'./data/DEG Result/DEGResult_{sample_choice[0]}_VS_{sample_choice[1]}.txt'
+    result_path = f'./data/DEG Result/DEGResult_{sample_choice[0]}_VS_{sample_choice[1]}.txt'
     
     # csv로 읽기
-    data_coordinate = pd.read_csv(coordinate_path, sep='\t')
-    df = pd.DataFrame(data_coordinate)
+    data_result = pd.read_csv(result_path, sep='\t')
+    df = pd.DataFrame(data_result)
 
     # p-value에 -log10 적용하기
     df['FDR-adjusted p-value'] = -np.log10(df['FDR-adjusted p-value'])
+
+    # threshold 설정
+    threshold_fold = -np.log2(fold_change_choice)
+    threshold_p = -np.log10(p_value_choice)
+
+    df['Class'] = 'NoDiff'
+    df.loc[df['Log2FoldChange'] < threshold_fold, 'Class'] = 'Fold up'
+    df.loc[df['Log2FoldChange'] > threshold_p, 'Class'] = 'P up'
 
     # volcano 그리기
     st.subheader('Volcano Plot')
@@ -83,31 +91,34 @@ def plot_volcano(sample_choice, p_value_choice, fold_change_choice):
         data_frame=df, 
         x='Log2FoldChange', 
         y='FDR-adjusted p-value',  
+        color='Class',
         color_discrete_sequence = px.colors.qualitative.Pastel1,
+        hover_data={'Class': False}
         )
-    fig.add_shape(
-    dict(
-        type='line',
-        x0=-np.log10(p_value_choice),
-        x1=-np.log10(p_value_choice),
-        y0=0,
-        y1=max(df['FDR-adjusted p-value']),
-        line=dict(color='gray', dash='dash')
-        )
-    )
     fig.add_shape(
         dict(
             type='line',
-            x0=-np.log2(fold_change_choice),
-            x1=-np.log2(fold_change_choice),
+            x0=threshold_fold,
+            x1=threshold_fold,
             y0=0,
             y1=max(df['FDR-adjusted p-value']),
             line=dict(color='gray', dash='dash')
         )
     )
+    fig.add_shape(
+    dict(
+        type='line',
+        x0=threshold_p,
+        x1=threshold_p,
+        y0=0,
+        y1=max(df['FDR-adjusted p-value']),
+        line=dict(color='gray', dash='dash')
+        )
+    )
     fig.update_layout(
         xaxis_title="Log2 fold change",
         yaxis_title="-Log10 adjusted P",
+        showlegend=False,
     )
     st.plotly_chart(fig)
 
