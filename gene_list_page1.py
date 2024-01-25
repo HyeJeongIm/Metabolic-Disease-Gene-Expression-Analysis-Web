@@ -26,5 +26,6 @@ def write_gene_list_page():
     
     df = pd.read_csv(file_path, sep='\t')
     
-    show_heatmap(df, genes_list)
+    if st.button('Search'):
+        show_heatmap(df, genes_list)
 

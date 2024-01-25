@@ -51,4 +51,5 @@ def write_gene_list_page():
     file_path = f'data/Gene Expression/Raw/GeneExpression_{selected_group}.txt'
     df = pd.read_csv(file_path, sep='\t', index_col='Gene name')
     
-    show_heatmap2(genes_list, df)
+    if st.button('Search'):
+        show_heatmap2(genes_list, df)

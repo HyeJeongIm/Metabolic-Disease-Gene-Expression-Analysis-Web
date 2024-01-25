@@ -8,11 +8,9 @@ def create_header():
 
 def create_search_area():
     # selectbox를 위한 값 선언
-    sample_class = [
-        'AdiposeLH', 'AdiposeOH', 'AdiposeOD',
-        'LiverLH', 'LiverOH', 'LiverOD',
-        'MuscleLH', 'MuscleOH', 'MuscleOD',
-        ]
+    sample_class = ['Adipose_LH', 'Adipose_OH', 'Adipose_OD',
+              'Liver_LH', 'Liver_OH', 'Liver_OD',
+              'Muscle_LH', 'Muscle_OH', 'Muscle_OD']
     p_value = [0.05, 0.01, 0.001]
     fold_change = ['1.5 fold', '2 fold', '3 fold']
     pathway = ['Pathway', 'Go', 'Hallmark']
