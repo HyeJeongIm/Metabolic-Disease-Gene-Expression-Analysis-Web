@@ -24,10 +24,6 @@ def create_search_area():
     pathway_choice = st.selectbox('Choose the pathway', pathway, key='pathway_input')
 
     if st.button('Search'):
-        st.session_state['search_pressed'] = True
-        st.session_state['gene_name'] = None
-
-    if 'search_pressed' in st.session_state and st.session_state['search_pressed']:
         plot_pca(sample_choice)
         plot_volcano(sample_choice, p_value_choice, fold_change_choice)
 
