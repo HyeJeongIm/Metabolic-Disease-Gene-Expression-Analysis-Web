@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
 import plotly.express as px
+import os
 
 def create_header():
     st.title('DEG Analysis')
@@ -25,18 +25,27 @@ def create_search_area():
 
     if st.button('Search'):
         st.session_state['search_pressed'] = True
+        st.session_state['gene_name'] = None
 
     if 'search_pressed' in st.session_state and st.session_state['search_pressed']:
         plot_pca(sample_choice)
+        plot_volcano(sample_choice, p_value_choice, fold_change_choice)
 
 def plot_pca(sample_choice):
     # PCA에 사용할 데이터 파일 불러오기
     coordinate_path = f'./data/PCA/PCACoordinate_{sample_choice[0]}_VS_{sample_choice[1]}.txt'
-    data_coordinate = pd.read_csv(coordinate_path, sep='\t')
-
     variance_path = f'./data/PCA/PCAVarianceExplained_{sample_choice[0]}_VS_{sample_choice[1]}.txt'
+
+    # 데이터 파일 존재하지 않으면 경로 다시 설정
+    if not os.path.exists(coordinate_path) and not os.path.exists(variance_path):
+        coordinate_path = f'./data/PCA/PCACoordinate_{sample_choice[1]}_VS_{sample_choice[0]}.txt'
+        variance_path = f'./data/PCA/PCAVarianceExplained_{sample_choice[1]}_VS_{sample_choice[0]}.txt'
+    
+    # csv로 읽기
+    data_coordinate = pd.read_csv(coordinate_path, sep='\t')
     data_variance = pd.read_csv(variance_path, sep='\t', header=None)
 
+    # variance값 반올림
     pc1 = round(data_variance[0][0], 1)
     pc2 = round (data_variance[1][0], 1)
 
@@ -53,6 +62,10 @@ def plot_pca(sample_choice):
         )
     st.plotly_chart(fig)
 
+def plot_volcano(sample_choice, p_value_choice, fold_change_choice):
+    st.write(sample_choice)
+    st.write(p_value_choice)
+    st.write(fold_change_choice)
         
 def write_deg_page():
     create_header()
