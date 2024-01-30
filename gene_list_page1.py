@@ -15,6 +15,10 @@ def show_heatmap(df, genes):
         st.pyplot(plt)
     else:
         st.error('Please enter valid gene names.')
+
+def show_interaction(df, genes):
+    df_filtered = df.set_index('Gene name').loc[genes, genes]
+    st.dataframe(df_filtered)
         
 def write_gene_list_page():
     create_header()
@@ -28,4 +32,5 @@ def write_gene_list_page():
     
     if st.button('Search'):
         show_heatmap(df, genes_list)
+        show_interaction(df, genes_list)
 
