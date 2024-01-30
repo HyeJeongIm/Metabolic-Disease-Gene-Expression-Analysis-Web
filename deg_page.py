@@ -67,25 +67,39 @@ def plot_pca(sample_choice):
     st.plotly_chart(fig)
 
 def plot_volcano(sample_choice, p_value_choice, fold_change_choice):
-    # PCA에 사용할 데이터 파일 불러오기
+    # Volcano에 사용할 데이터 파일 불러오기
     result_path = f'./data/DEG Result/DEGResult_{sample_choice[0]}_VS_{sample_choice[1]}.txt'
     
-    # csv로 읽기
-    data_result = pd.read_csv(result_path, sep='\t')
-    df = pd.DataFrame(data_result)
+    # 데이터 파일 존재하지 않을 때
+    if not os.path.exists(result_path):
+        result_path = f'./data/DEG Result/DEGResult_{sample_choice[1]}_VS_{sample_choice[0]}.txt'
 
-    # p-value에 -log10 적용하기
-    df['FDR-adjusted p-value'] = -np.log10(df['FDR-adjusted p-value'])
+        # csv로 읽기
+        data_result = pd.read_csv(result_path, sep='\t')
+        df = pd.DataFrame(data_result)
+
+        # p-value에 -log10 적용하기
+        df['FDR-adjusted p-value'] = -np.log10(df['FDR-adjusted p-value'])
+
+        # Log2 Fold change 값 변경하기
+        df['Log2FoldChange'] = 1/ (2**(df['Log2FoldChange']))
+    else:
+        # csv로 읽기
+        data_result = pd.read_csv(result_path, sep='\t')
+        df = pd.DataFrame(data_result)
+
+        # p-value에 -log10 적용하기
+        df['FDR-adjusted p-value'] = -np.log10(df['FDR-adjusted p-value'])
 
     # threshold 설정
     threshold_fold = -np.log2(fold_change_choice)
     threshold_p = -np.log10(p_value_choice)
 
     df['Class'] = 'NoDiff'
-    df.loc[df['Log2FoldChange'] < threshold_fold, 'Class'] = 'Fold up'
+    df.loc[df['Log2FoldChange'] < threshold_fold, 'Class'] = 'Fold down'
     df.loc[df['Log2FoldChange'] > threshold_p, 'Class'] = 'P up'
 
-    # volcano 그리기
+    # Volcano 그리기
     st.subheader('Volcano Plot')
     fig = px.scatter(
         data_frame=df, 
