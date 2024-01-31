@@ -6,8 +6,6 @@ import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-
-
 def create_header():
     st.title('Multiple Gene Expression')
         
@@ -26,7 +24,6 @@ def show_heatmap(genes_list, base_path):
             subplot_titles=file_list,
             horizontal_spacing=0.005,  # 간격 조정
             vertical_spacing=0.05
-
         )
 
         for i, file in enumerate(file_list, start=1):
@@ -53,7 +50,11 @@ def show_heatmap(genes_list, base_path):
             width=900, 
             height=300 * rows, 
             title_text='Heatmaps for All Files in Z_Score Directory',
-            showlegend=False
+            showlegend=False,
+        )
+
+        fig.update_traces(
+            showscale=False,
         )
 
         fig.update_xaxes(showticklabels=False)
