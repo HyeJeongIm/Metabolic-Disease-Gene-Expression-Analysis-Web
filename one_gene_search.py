@@ -130,6 +130,9 @@ def show_box_plot(name, z_score=False):
                 # melt 함수를 사용하여 long-format 데이터로 변환
                 melted_df = df.melt(var_name='sample', value_name='value')
                 melted_df['file'] = clean_file_name  # 파일명을 열에 추가
+                # Raw인 경우 숫자열에만 2의 거듭제곱 연산을 적용
+                numeric_columns = melted_df.select_dtypes(include=['number']).columns
+                melted_df[numeric_columns] = 2 ** melted_df[numeric_columns]
                 dfs.append(melted_df) 
 
     # 결합된 데이터프레임 생성
