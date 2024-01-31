@@ -38,6 +38,8 @@ def show_heatmap(genes_list, base_path):
                         x=heatmap_data.columns.tolist(), 
                         y=heatmap_data.index.tolist(), 
                         colorscale='Purples',
+                        colorbar_tickvals=[],  # 컬러바의 틱 값을 빈 리스트로 설정하여 숫자를 제거
+                        colorbar_ticktext=[]   # 컬러바의 틱 텍스트를 빈 리스트로 설정하여 숫자를 제거
                     ),
                     row=(i-1)//cols + 1, col=(i-1)%cols + 1
                 )
@@ -51,10 +53,6 @@ def show_heatmap(genes_list, base_path):
             height=300 * rows, 
             title_text='Heatmaps for All Files in Z_Score Directory',
             showlegend=False,
-        )
-
-        fig.update_traces(
-            showscale=False,
         )
 
         fig.update_xaxes(showticklabels=False)
