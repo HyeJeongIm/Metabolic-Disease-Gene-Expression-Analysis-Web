@@ -83,6 +83,7 @@ def plot_volcano(sample_choice, p_value_choice, fold_change_choice):
 
         # Log2 Fold change 값 변경하기
         df['Log2FoldChange'] = 1/ (2**(df['Log2FoldChange']))
+        df['Log2FoldChange'] = -np.log2(df['Log2FoldChange'])
     else:
         # csv로 읽기
         data_result = pd.read_csv(result_path, sep='\t')
