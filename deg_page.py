@@ -97,8 +97,8 @@ def plot_volcano(sample_choice, p_value_choice, fold_change_choice):
     threshold_p = -np.log10(p_value_choice)
 
     df['Class'] = 'NoDiff'
-    df.loc[df['Log2FoldChange'] < threshold_fold, 'Class'] = 'Fold down'
-    df.loc[df['Log2FoldChange'] > threshold_p, 'Class'] = 'P up'
+    df.loc[(df['Log2FoldChange'] > -threshold_fold) & (df['FDR-adjusted p-value'] > threshold_p), 'Class'] = 'Fold up'
+    df.loc[(df['Log2FoldChange'] < threshold_fold) & (df['FDR-adjusted p-value'] > threshold_p), 'Class'] = 'Fold down'
 
     # Volcano 그리기
     st.subheader('Volcano Plot')
@@ -107,8 +107,9 @@ def plot_volcano(sample_choice, p_value_choice, fold_change_choice):
         x='Log2FoldChange', 
         y='FDR-adjusted p-value',  
         color='Class',
+        color_discrete_map={'NoDiff': 'lightgray', 'Fold up': '#f48db4', 'Fold down': '#9cd3d3'},
         color_discrete_sequence = px.colors.qualitative.Pastel1,
-        hover_data={'Class': False}
+        hover_data={'Class': False},
         )
     fig.add_shape(
         dict(
@@ -123,17 +124,27 @@ def plot_volcano(sample_choice, p_value_choice, fold_change_choice):
     fig.add_shape(
     dict(
         type='line',
-        x0=threshold_p,
-        x1=threshold_p,
+        x0=-threshold_fold,
+        x1=-threshold_fold,
         y0=0,
         y1=max(df['FDR-adjusted p-value']),
+        line=dict(color='gray', dash='dash')
+        )
+    )
+    fig.add_shape(
+    dict(
+        type='line',
+        x0=min(df['Log2FoldChange']),
+        x1=max(df['Log2FoldChange']),
+        y0=threshold_p,
+        y1=threshold_p,
         line=dict(color='gray', dash='dash')
         )
     )
     fig.update_layout(
         xaxis_title="Log2 fold change",
         yaxis_title="-Log10 adjusted P",
-        showlegend=False,
+        # showlegend=False,
     )
     st.plotly_chart(fig)
 
