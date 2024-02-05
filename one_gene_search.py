@@ -25,7 +25,7 @@ def load_network_data(file_path, name):
 
 def plot_data(combined_df):
     fig = px.box(combined_df, x='file', y='value', color='file', 
-                 labels={'value': 'Expression Level', 'file': 'Sample'})
+                 labels={'value': 'Expression Level', 'file': 'Tissue [Disease status]'})
     fig.update_layout(showlegend=False)  
     st.plotly_chart(fig, use_container_width=True)
       
