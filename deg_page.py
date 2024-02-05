@@ -101,7 +101,8 @@ def plot_volcano(sample_choice, p_value_choice, fold_change_choice):
     df.loc[(df['Log2FoldChange'] < threshold_fold) & (df['FDR-adjusted p-value'] > threshold_p), 'Class'] = 'Fold down'
 
     # Volcano 그리기
-    st.subheader('Volcano Plot')
+    st.subheader(f'Volcano Plot')
+    st.write(f'Criteria: {sample_choice[0]}')
     fig = px.scatter(
         data_frame=df, 
         x='Log2FoldChange', 
