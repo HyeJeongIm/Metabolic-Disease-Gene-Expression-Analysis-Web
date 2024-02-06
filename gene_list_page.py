@@ -7,6 +7,7 @@ from plotly.subplots import make_subplots
 from pyvis.network import Network
 import streamlit.components.v1 as components
 from itertools import combinations
+import re 
 
 def create_header():
     st.title('Multiple Gene Expression')
@@ -100,7 +101,9 @@ def write_gene_list_page():
     create_header()
     
     genes_input = st.text_area('Enter gene names:')
-    genes_list = [gene.strip() for gene in genes_input.split('\n') if gene]
+    # 여러 구분자 처리
+    genes_list = re.split('[ ,\t\n]+', genes_input.strip())
+    
     
     st.write(f"Number of genes entered: {len(genes_list)}")  # Debug print
     base_path = 'data/Gene Expression/Z_Score'
