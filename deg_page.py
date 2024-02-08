@@ -149,6 +149,22 @@ def plot_volcano(sample_choice, p_value_choice, fold_change_choice):
     )
     st.plotly_chart(fig)
 
+    show_table(df)
+
+def show_table(df):
+    filtered_df = df[df['Class'].isin(['Fold up', 'Fold down'])]
+    filtered_df= filtered_df.sort_values(by='FDR-adjusted p-value', ascending=True)
+
+    st.dataframe(filtered_df.style.apply(color_rows, axis=1), width=1000)
+
+def color_rows(row):
+    if row['Class'] == 'Fold up':
+        return ['background-color: #f48db4'] * len(row)
+    elif row['Class'] == 'Fold down':
+        return ['background-color: #9cd3d3'] * len(row)
+    else:
+        return [''] * len(row)
+
 
 def write_deg_page():
     create_header()
