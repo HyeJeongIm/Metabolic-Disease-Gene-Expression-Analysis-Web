@@ -4,6 +4,27 @@ from pyvis.network import Network
 import streamlit.components.v1 as components
 import streamlit as st
 import os
+import re
+
+@st.cache_data
+def custom_sort_key(file_name):
+    """
+    파일 이름을 기반으로 정렬하기 위한 사용자 정의 키 함수.
+    먼저 조직 이름으로 정렬하고, 그 다음 LH, OH, OD 순서로 정렬한다.
+    """
+    for prefix in ['GeneExpression_', 'GeneExpressionZ_']:
+        if file_name.startswith(prefix):
+            file_name = file_name[len(prefix):]
+            break
+
+    parts = file_name.replace('.txt', '').split('_')
+    tissue = parts[0]  # 조직 이름
+    condition = parts[1]  # 상태
+
+    # 순서 정의
+    condition_order = {'LH': 1, 'OH': 2, 'OD': 3}
+
+    return (tissue, condition_order.get(condition, 99))
 
 @st.cache_data
 def load_data(file_path, name):
@@ -113,20 +134,22 @@ def show_box_plot(name, z_score=False):
     folder_path = './data/Gene Expression/' + ('Z_Score' if st.session_state['z_score'] else 'Raw')
     
     files = os.listdir(folder_path)
+    sorted_files = sorted(files, key=custom_sort_key)
+
     dfs = []
 
-    for file in files:
+    for file in sorted_files:
         file_path = os.path.join(folder_path, file)
         df = load_data(file_path, name)
         if not df.empty:
             if 'Z_Score' in folder_path :
-                clean_file_name = file.replace('GeneExpressionZ_', '')[:-4]  
+                clean_file_name = file.replace('GeneExpressionZ_', '').replace('_', ' [')[:-4] + ']'
                 melted_df = df.melt(var_name='sample', value_name='value')
                 melted_df['file'] = clean_file_name  
                 dfs.append(melted_df)
                 
             else:
-                clean_file_name = file.replace('GeneExpression_', '')[:-4]  # 확장자 제외
+                clean_file_name = file.replace('GeneExpression_', '').replace('_', ' [')[:-4] + ']'
                 # melt 함수를 사용하여 long-format 데이터로 변환
                 melted_df = df.melt(var_name='sample', value_name='value')
                 melted_df['file'] = clean_file_name  # 파일명을 열에 추가
