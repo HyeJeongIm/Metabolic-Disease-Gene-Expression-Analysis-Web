@@ -8,6 +8,27 @@ from pyvis.network import Network
 import streamlit.components.v1 as components
 from itertools import combinations
 import re 
+from one_gene_search import custom_sort_key
+
+@st.cache_data
+def custom_sort_key(file_name):
+    """
+    파일 이름을 기반으로 정렬하기 위한 사용자 정의 키 함수.
+    먼저 조직 이름으로 정렬하고, 그 다음 LH, OH, OD 순서로 정렬한다.
+    """
+    for prefix in ['GeneExpressionZ_']:
+        if file_name.startswith(prefix):
+            file_name = file_name[len(prefix):]
+            break
+
+    parts = file_name.replace('.txt', '').split('_')
+    tissue = parts[0]  # 조직 이름
+    condition = parts[1]  # 상태
+
+    # 순서 정의
+    condition_order = {'LH': 1, 'OH': 2, 'OD': 3}
+
+    return (tissue, condition_order.get(condition, 99))
 
 def create_header():
     st.title('Multiple Gene Expression')
@@ -15,16 +36,23 @@ def create_header():
 def show_heatmap(genes_list, base_path):
     if genes_list:
         file_list = os.listdir(base_path)
-        file_list = [file for file in file_list if file.endswith('.txt')]
+        sorted_files = sorted(file_list, key=custom_sort_key)
 
-        total_files = len(file_list)
+        # 파일 이름을 원하는 형식으로 변환
+        modified_file_list = [
+            file.replace('GeneExpressionZ_', '').replace('_', ' [')[:-4] + ']' if file.endswith('.txt') else file
+            for file in sorted_files
+            if file.endswith('.txt')
+        ]
+
+        total_files = len(modified_file_list)
         cols = 3  
         rows = (total_files + cols - 1) // cols
 
         fig = make_subplots(
             rows=rows, 
             cols=cols, 
-            subplot_titles=file_list,
+            subplot_titles=modified_file_list,
             horizontal_spacing=0.005,  # 간격 조정
             vertical_spacing=0.05
         )
