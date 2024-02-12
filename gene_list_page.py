@@ -56,32 +56,48 @@ def show_heatmap(genes_list, base_path):
             horizontal_spacing=0.005,  # 간격 조정
             vertical_spacing=0.05
         )
+        colorscale = [
+            [0, "blue"],  # 완전 파란색 for -3 이하
+            [1/6, "blue"],  # 경계 - 파란색
+            [1/2, "white"],  # 중간값 - 흰색 for 0
+            [5/6, "red"],  # 경계 - 빨간색
+            [1, "red"]  # 완전 빨간색 for 3 이상
+        ]
 
-        for i, file in enumerate(file_list, start=1):
+        for i, file in enumerate(sorted_files, start=1):
+            if not file.endswith('.txt'):
+                continue
             file_path = os.path.join(base_path, file)
             try:
                 df = pd.read_csv(file_path, sep='\t', index_col='Gene name')
                 heatmap_data = df.loc[genes_list]
 
+                row = (i-1) // cols + 1
+                col = (i-1) % cols + 1
                 fig.add_trace(
                     go.Heatmap(
                         z=heatmap_data.values, 
                         x=heatmap_data.columns.tolist(), 
                         y=heatmap_data.index.tolist(), 
-                        colorscale='Purples',
-                        colorbar_tickvals=[],  # 컬러바의 틱 값을 빈 리스트로 설정하여 숫자를 제거
-                        colorbar_ticktext=[]   # 컬러바의 틱 텍스트를 빈 리스트로 설정하여 숫자를 제거
+                        colorscale=colorscale,
+                        colorbar=dict(tickvals=[], ticktext=[]),  # Remove numbers from the colorbar
                     ),
-                    row=(i-1)//cols + 1, col=(i-1)%cols + 1
+                    row=row, col=col
                 )
+
+                if col == 1:
+                    fig.update_yaxes(row=row, col=col)
+                else:
+                    fig.update_yaxes(showticklabels=False, row=row, col=col)
+
             except FileNotFoundError:
                 st.error(f'File not found: {file}')
             except KeyError:
                 st.error(f'One or more genes not found in file: {file}')
 
         fig.update_layout(
-            width=900, 
-            height=300 * rows, 
+            width=900,
+            height=300 * rows,
             title_text='Heatmaps for All Files in Z_Score Directory',
             showlegend=False,
         )
@@ -91,6 +107,50 @@ def show_heatmap(genes_list, base_path):
 
     else:
         st.error('Please enter at least one gene name.')
+
+        # for i, file in enumerate(file_list, start=1):
+        #     file_path = os.path.join(base_path, file)
+        #     try:
+        #         df = pd.read_csv(file_path, sep='\t', index_col='Gene name')
+        #         heatmap_data = df.loc[genes_list]
+
+        #         row = (i-1) // cols + 1
+        #         col = (i-1) % cols + 1
+        #         fig.add_trace(
+        #             go.Heatmap(
+        #                 z=heatmap_data.values, 
+        #                 x=heatmap_data.columns.tolist(), 
+        #                 y=heatmap_data.index.tolist(), 
+        #                 colorscale='Purples',
+        #                 colorbar_tickvals=[],  # 컬러바의 틱 값을 빈 리스트로 설정하여 숫자를 제거
+        #                 colorbar_ticktext=[]   # 컬러바의 틱 텍스트를 빈 리스트로 설정하여 숫자를 제거
+        #             ),
+        #             row=row, col=col
+        #         )
+                
+        #         # y축 겹치는 label 조절 
+        #         if col == 1:
+        #             fig.update_yaxes(row=row, col=col)
+        #         else:
+        #             fig.update_yaxes(showticklabels=False, row=row, col=col)
+
+        #     except FileNotFoundError:
+        #         st.error(f'File not found: {file}')
+        #     except KeyError:
+        #         st.error(f'One or more genes not found in file: {file}')
+
+    #     fig.update_layout(
+    #         width=900, 
+    #         height=300 * rows, 
+    #         title_text='Heatmaps for All Files in Z_Score Directory',
+    #         showlegend=False,
+    #     )
+
+    #     fig.update_xaxes(showticklabels=False)
+    #     st.plotly_chart(fig)
+
+    # else:
+    #     st.error('Please enter at least one gene name.')
         
 def show_interaction(genes_list):
     with st.spinner('그래프를 그리는 중입니다...'):
