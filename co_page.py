@@ -18,23 +18,28 @@ def load_data(file_path, threshold):
 def load_group_data(group_names, threshold):
     combined_df = pd.DataFrame()
     # 각 그룹별로 색상 지정
-    group_colors = {group_names[0]: 'blue', group_names[1]: 'red'}
-
+    group_colors = {group_names[0]: 'blue', group_names[1]: 'red', 'overlap': 'green'}
+    
+    group_data = {}
     for group in group_names:
         file_path = f'data/Gene-Gene Expression Correlation/Correlation Higher Than 0.5/GeneGene_HighCorrelation_{group}_0.5.txt'
         
         if os.path.exists(file_path):
             df = pd.read_csv(file_path, sep='\t')
             filtered_df = df[df['Correlation coefficient'].abs() >= threshold]
-            filtered_df['group'] = group
+            group_data[group] = filtered_df[['Gene', 'Gene.1']].apply(frozenset, axis=1).to_list()
             filtered_df['color'] = group_colors[group]
             combined_df = pd.concat([combined_df, filtered_df], ignore_index=True)
         else:
             st.error(f'파일이 존재하지 않습니다: {file_path}')
             return pd.DataFrame()
-    
-    # 중복된 엣지(유전자 쌍) 제거
-    combined_df = combined_df.drop_duplicates(subset=['Gene', 'Gene.1'])
+
+    # 겹치는 유전자 쌍을 찾아서 색상을 변경
+    if len(group_names) == 2:
+        overlap = set(group_data[group_names[0]]).intersection(set(group_data[group_names[1]]))
+        for idx, row in combined_df.iterrows():
+            if frozenset([row['Gene'], row['Gene.1']]) in overlap:
+                combined_df.at[idx, 'color'] = group_colors['overlap']
     
     return combined_df
 
