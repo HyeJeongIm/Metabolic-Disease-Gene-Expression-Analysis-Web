@@ -1,10 +1,10 @@
 import streamlit as st
 from streamlit_option_menu import option_menu
-import main_page, gene_list_page, deg_page
+import main_page, gene_list_page, deg_page, co_page
 
 def create_layout():
     with st.sidebar:
-        page = option_menu("Menu", ["Main", "Gene List", "DEG Analysis", 'Analysis'],
+        page = option_menu("Menu", ["Main", "Gene List", "DEG Analysis", "Co-expression", 'Analysis'],
                             icons=['house', 'list-columns', 'clipboard-data', 'bar-chart'],
                             menu_icon="app-indicator", default_index=0,
                             styles={
@@ -21,6 +21,8 @@ def create_layout():
         gene_list_page.write_gene_list_page()
     elif page == 'DEG Analysis':
         deg_page.write_deg_page()
+    elif page == 'Co-expression':
+        co_page.write_co_page()
     elif page == 'Analysis':
         pass
 
