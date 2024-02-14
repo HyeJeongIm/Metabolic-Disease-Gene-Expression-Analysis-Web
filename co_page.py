@@ -90,6 +90,16 @@ def show_combined_network(selected_groups, threshold):
     else:
         st.error('No data to display based on the selected threshold.')
 
+def show_color(selected_groups):
+    groups = {selected_groups[0]: '#0000FF', selected_groups[1]: '#FF0000', f'{selected_groups[0]} & {selected_groups[1]}': '#008000'}
+    
+    columns = st.columns(3)
+    for i, (group, color) in enumerate(groups.items()):
+        with columns[i % 3]:
+            st.write(f"{group}: ", unsafe_allow_html=True)
+            st.markdown(f'<div style="width:30px;height:30px;background-color:{color};border-radius:5px;"></div>', unsafe_allow_html=True)
+            st.write("")
+
 def write_co_page():
     create_header()
     sample_class = ['Adipose_LH', 'Adipose_OH', 'Adipose_OD',
@@ -107,6 +117,7 @@ def write_co_page():
             else:
                 st.error(f"File for {group} does not exist.")
         elif len(selected_groups) == 2:
+            show_color(selected_groups)
             show_combined_network(selected_groups, threshold)
         else:
             st.error("Please select one or two groups.")
