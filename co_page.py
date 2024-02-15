@@ -96,8 +96,7 @@ def show_color(selected_groups):
     columns = st.columns(3)
     for i, (group, color) in enumerate(groups.items()):
         with columns[i % 3]:
-            st.write(f"{group}: ", unsafe_allow_html=True)
-            st.markdown(f'<div style="width:30px;height:30px;background-color:{color};border-radius:5px;"></div>', unsafe_allow_html=True)
+            st.markdown(f'<div style="display:flex;align-items:center;"><div style="width:18px;height:18px;background-color:{color};border-radius:5px;"></div><span style="margin-left:8px;">{group}</span></div>', unsafe_allow_html=True)
             st.write("")
 
 def write_co_page():
