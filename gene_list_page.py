@@ -45,17 +45,21 @@ def show_heatmap(genes_list, base_path):
         ]
 
         total_files = len(modified_file_list)
-        cols = 3  
+        cols = 3
         rows = (total_files + cols - 1) // cols
 
-        # 유전자 하나당 할당할 높이
         gene_height = 20
-        # 각 히트맵의 높이를 유전자 개수에 따라 조정
-        heatmap_height = len(genes_list) * gene_height
+        max_genes_display = 20  # 최대로 표시할 유전자 수
+        if len(genes_list) > max_genes_display:
+            heatmap_height = max_genes_display * gene_height
+            show_gene_labels = False  # 유전자 이름 표시 여부
+        else:
+            heatmap_height = len(genes_list) * gene_height
+            show_gene_labels = True
 
         fig = make_subplots(
-            rows=rows, 
-            cols=cols, 
+            rows=rows,
+            cols=cols,
             subplot_titles=modified_file_list,
             horizontal_spacing=0.005,
             vertical_spacing=0.05
@@ -80,16 +84,16 @@ def show_heatmap(genes_list, base_path):
                 col = (i-1) % cols + 1
                 fig.add_trace(
                     go.Heatmap(
-                        z=heatmap_data.values, 
-                        x=heatmap_data.columns.tolist(), 
-                        y=heatmap_data.index.tolist(), 
+                        z=heatmap_data.values,
+                        x=heatmap_data.columns.tolist(),
+                        y=heatmap_data.index.tolist() if show_gene_labels else [],
                         colorscale=colorscale,
                         colorbar=dict(tickvals=[], ticktext=[]),
                     ),
                     row=row, col=col
                 )
 
-                if col == 1:
+                if col == 1 and show_gene_labels:
                     fig.update_yaxes(row=row, col=col)
                 else:
                     fig.update_yaxes(showticklabels=False, row=row, col=col)
@@ -99,19 +103,17 @@ def show_heatmap(genes_list, base_path):
             except KeyError:
                 st.error(f'One or more genes not found in file: {file}')
 
-        # 전체 그래프의 높이를 각 히트맵의 높이에 따라 동적으로 조정
         total_height = heatmap_height * rows
 
         fig.update_layout(
             width=900,
-            height=max(total_height, 600),
+            height=max(total_height, 600),  
             title_text='Heatmaps for All Files in Z_Score Directory',
             showlegend=False,
         )
 
         fig.update_xaxes(showticklabels=False)
         st.plotly_chart(fig)
-
     else:
         st.error('Please enter at least one gene name.')
 
