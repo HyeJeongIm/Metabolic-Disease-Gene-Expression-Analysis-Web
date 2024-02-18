@@ -128,49 +128,49 @@ def show_box_plot(name, z_score=False):
 '''
     Interaction Network Diagram
 '''        
-def plot_pyvis(df, gene_name):
-    net = Network(
-        notebook=True,
-        directed=False,
-        )
-    
-    # 중복 제거
-    unique_edges = df[['Official Symbol Interactor A', 'Official Symbol Interactor B']].drop_duplicates()
-    
+def plot_initial_pyvis(df, gene_name):
+    net = Network(notebook=True, directed=False)
+    # 이미 추가된 노드를 추적하기 위함
+    seen_nodes = set()  
+
+    unique_edges = df.drop_duplicates(subset=['Official Symbol Interactor A', 'Official Symbol Interactor B'])
+
     for _, row in unique_edges.iterrows():
-        src = row['Official Symbol Interactor A']
-        dst = row['Official Symbol Interactor B']
+        src, dst = row['Official Symbol Interactor A'], row['Official Symbol Interactor B']
 
-        # 찾는 유전자 빨간색으로 표현하기
-        if src == gene_name:
-            net.add_node(src, label=src, title=src, color='red', size=20)
-        else:
-            net.add_node(src, label=src, title=src, size=15)
-        if dst == gene_name:
-            net.add_node(dst, label=dst, title=dst, color='red', size=20)
-        else:
-            net.add_node(dst, label=dst, title=dst, size=15)
+        for node in [src, dst]:
+            if node not in seen_nodes:
+                if node == gene_name:
+                    net.add_node(node, label=node, title=node, color='Orange', size=25)
+                else:
+                    net.add_node(node, label=node, title=node, color='grey', size=15)
+                seen_nodes.add(node)
 
-        net.add_edge(src, dst, color='skyblue')
+        net.add_edge(src, dst, color='lightgrey')
 
     net.show_buttons(filter_=['physics'])
     net.show("pyvis_net_graph.html")
 
-    # html 파일 페이지에 나타내기
     HtmlFile = open('pyvis_net_graph.html', 'r', encoding='utf-8')
     source_code = HtmlFile.read() 
-    components.html(source_code, width=670, height=1070)        
-        
+    components.html(source_code, width=670, height=1070) 
+    
+# 유전자 상호작용 데이터를 로드하는 함수
+def load_interaction_data(gene_name):
+    # 가정: 'data/Gene-Gene Interaction/BIOGRID-ORGANISM-Homo_sapiens-4.4.229.tab3.txt' 경로에 데이터가 있음
+    df = pd.read_csv('data/Gene-Gene Interaction/BIOGRID-ORGANISM-Homo_sapiens-4.4.229.tab3.txt', sep='\t')
+    interactions = df[(df['Official Symbol Interactor A'] == gene_name) | (df['Official Symbol Interactor B'] == gene_name)]
+    print(interactions)
+    return interactions        
 @st.cache_data
-def load_network_data(file_path, name):
-    data = pd.read_csv(file_path, sep='\t')
-    df = pd.DataFrame(data)
+def load_network_data(gene_name):
+    file_path = 'data\Gene-Gene Interaction\BIOGRID-ORGANISM-Homo_sapiens-4.4.229.tab3.txt'
+    df = pd.read_csv(file_path, sep='\t')
+    interactions = df[((df['Official Symbol Interactor A'] == gene_name) | 
+                    (df['Official Symbol Interactor B'] == gene_name))][['Official Symbol Interactor A', 'Official Symbol Interactor B']]
 
-    df_interaction = df[['Official Symbol Interactor A', 'Official Symbol Interactor B']]
+    return interactions 
 
-    result = df_interaction[(df_interaction['Official Symbol Interactor A'] == name) | (df_interaction['Official Symbol Interactor B'] == name)]
-
-    return result, name
 # 데이터 로드 및 필터링 함수
 def load_group_data(group, gene_name, threshold):
     file_path = f'data/Gene-Gene Expression Correlation/Correlation Higher Than 0.5/GeneGene_HighCorrelation_{group}_0.5.txt'
@@ -198,32 +198,82 @@ def create_and_show_network(df, gene_name):
     
     net.show("network.html")
     return net
+# 네트워크 다이어그램을 업데이트하는 함수
+def update_network_diagram(df, gene_name, group, threshold):
+    # 가정: 상관관계 데이터 파일 경로 패턴
+    file_path = f'data/Gene-Gene Expression Correlation/Correlation Higher Than 0.5/GeneGene_HighCorrelation_{group}_0.5.txt'
+    df_correlation = pd.read_csv(file_path, sep='\t')
 
+    net = Network(notebook=True, directed=False)
+    
+    for _, row in df.iterrows():
+        src = row['Official Symbol Interactor A']
+        dst = row['Official Symbol Interactor B']
+
+        src_color = dst_color = 'blue'  # 기본 색상
+        edge_color = 'blue'
+        size = 15
+
+        # 상관관계 데이터에 따라 색상 업데이트
+        if src == gene_name or dst == gene_name:
+            size = 20  # 주요 유전자 크기 증가
+
+        correlation_row = df_correlation[(df_correlation['Gene A'] == src) & (df_correlation['Gene B'] == dst) & (df_correlation['Correlation'].abs() >= threshold)]
+        if not correlation_row.empty:
+            correlation_value = correlation_row.iloc[0]['Correlation']
+            if correlation_value > 0:
+                src_color = dst_color = edge_color = 'red'  # 양의 상관관계
+            else:
+                src_color = dst_color = edge_color = 'green'  # 음의 상관관계
+
+        net.add_node(src, label=src, title=src, color=src_color, size=size)
+        net.add_node(dst, label=dst, title=dst, color=dst_color, size=size)
+        net.add_edge(src, dst, color=edge_color)
+
+    net.show("updated_network.html")
+    HtmlFile = open("updated_network.html", 'r', encoding='utf-8')
+    source_code = HtmlFile.read() 
+    components.html(source_code, width=800, height=600)
 def show_network_diagram(gene_name):
-    st.subheader('Network Diagram')
-
-    file_path = 'data\Gene-Gene Interaction\BIOGRID-ORGANISM-Homo_sapiens-4.4.229.tab3.txt'
-
-    df_inter, name = load_network_data(file_path, gene_name)
+    df_interactions = load_network_data(gene_name)
     
     # threshold 및 group 선택
     sample_class = ['Adipose_LH', 'Adipose_OH', 'Adipose_OD',
                     'Liver_LH', 'Liver_OH', 'Liver_OD',
                     'Muscle_LH', 'Muscle_OH', 'Muscle_OD']
-    selected_groups = st.selectbox('Choose one group', sample_class, key='sample_input')
+    group = st.selectbox('Choose one group', sample_class, key='sample_input')
     threshold = st.number_input('Enter threshold:', min_value=0.0, value=0.5, step=0.01)
-    if st.button('Create Network'):
-        if gene_name and selected_groups:
-            filtered_df = load_group_data(selected_groups, gene_name, threshold)
-            if not filtered_df.empty:
-                net = create_and_show_network(filtered_df, gene_name)
-                # 네트워크를 HTML로 시각화
-                HtmlFile = open("network.html", 'r', encoding='utf-8')
-                source_code = HtmlFile.read()
-                st.components.v1.html(source_code, height=800)
-            else:
-                st.error("No matching data found with the given threshold.")
-        else:
-            st.error("Please enter a gene name and select a group.")
-    else:        
-        plot_pyvis(df_inter, name)
+    
+    # group 및 threshold를 선택하면 그려짐
+    if st.button('Create Group Network'):
+        update_network_diagram(df_interactions, gene_name, group, threshold)
+    else: 
+        plot_initial_pyvis(df_interactions, gene_name)
+
+    # group = st.selectbox("Select a group:", ["Adipose_LH", "Adipose_OH", "Adipose_OD", "Liver_LH", "Liver_OH", "Liver_OD", "Muscle_LH", "Muscle_OH", "Muscle_OD"])
+    # threshold = st.slider("Select a correlation threshold:", 0.0, 1.0, 0.5, 0.01)   
+        # st.subheader('Network Diagram')
+
+    # file_path = 'data\Gene-Gene Interaction\BIOGRID-ORGANISM-Homo_sapiens-4.4.229.tab3.txt'
+    # df_inter, name = load_network_data(file_path, gene_name)
+    # plot_pyvis(df_inter, name)
+    # # threshold 및 group 선택
+    # sample_class = ['Adipose_LH', 'Adipose_OH', 'Adipose_OD',
+    #                 'Liver_LH', 'Liver_OH', 'Liver_OD',
+    #                 'Muscle_LH', 'Muscle_OH', 'Muscle_OD']
+    # selected_groups = st.selectbox('Choose one group', sample_class, key='sample_input')
+    # threshold = st.number_input('Enter threshold:', min_value=0.0, value=0.5, step=0.01)
+    # if st.button('Create Network'):
+    #     if gene_name and selected_groups:
+    #         filtered_df = load_group_data(selected_groups, gene_name, threshold)
+    #         if not filtered_df.empty:
+    #             net = create_and_show_network(filtered_df, gene_name)
+    #             # 네트워크를 HTML로 시각화
+    #             HtmlFile = open("network.html", 'r', encoding='utf-8')
+    #             source_code = HtmlFile.read()
+    #             st.components.v1.html(source_code, height=800)
+    #         else:
+    #             st.error("No matching data found with the given threshold.")
+    #     else:
+    #         st.error("Please enter a gene name and select a group.")
+    # else:        
