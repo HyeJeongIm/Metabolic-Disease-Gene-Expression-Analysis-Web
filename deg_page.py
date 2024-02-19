@@ -6,7 +6,7 @@ import numpy as np
 
 def create_header():
     st.title('DEG Analysis')
-
+                
 def create_search_area():
     # selectbox를 위한 값 선언
     sample_class = ['AdiposeLH', 'AdiposeOH', 'AdiposeOD',
@@ -25,6 +25,7 @@ def create_search_area():
     if st.button('Search'):
         plot_pca(sample_choice)
         plot_volcano(sample_choice, p_value_choice, fold_change_choice)
+        plot_pathway(sample_choice[0], sample_choice[1], p_value_choice, fold_change_choice, pathway_choice)
 
     # session_state 때문에 죽여둠
     # if st.button('Search'):
@@ -165,6 +166,65 @@ def color_rows(row):
     else:
         return [''] * len(row)
 
+def plot_pathway(group1, group2, p_value, fold_change, categories):
+    base_path = "data/DEG Pathway Enrichment Result/"
+    file_suffix = f"{group1}_VS_{group2}_p{p_value}_fc{fold_change}"
+
+    def format_group_name(name):
+        # 그룹 이름의 마지막 2글자를 대괄호로 묶어서 반환
+        if len(name) > 2:
+            return f"{name[:-2]} [{name[-2:]}]"
+        else:
+            return name
+
+    # 결과를 category별로 그룹화하여 표시하기 위해 순서 변경
+    for group_label in ["All", group1, group2]:
+        if group_label == "All":
+            st.write(f"## {group_label} Group")
+        else:
+            st.write(f"## {format_group_name(group_label)} Group")
+        for category in categories:
+            file_path = f"{base_path}DEGPathwayEnrichment_{file_suffix}_{group_label}.txt"
+            try:
+                data = []  
+                with open(file_path, 'r') as file:
+                    for line in file:
+                        parts = line.strip().split('\t')
+                        if len(parts) >= 8:
+                            data.append(parts[:8])
+                columns = data[0]  # 첫 줄을 컬럼명으로 사용
+                df = pd.DataFrame(data[1:], columns=columns)  
+                df = df.drop(columns=['Size (overlapping with base)'])  # 'Size (overlapping with base)' 컬럼 제외
+
+                st.write(f"### Category: {category}")
+                st.dataframe(df)  
+            except FileNotFoundError:
+                st.error(f"File not found: {file_path}")
+
+### 같은 category에 대해 "All", group1, group2 순서대로 결과를 표시
+# def plot_pathway(group1, group2, p_value, fold_change, categories):
+#     base_path = "data/DEG Pathway Enrichment Result/"
+#     file_suffix = f"{group1}_VS_{group2}_p{p_value}_fc{fold_change}"
+#     group_labels = ["All", group1, group2]
+
+#     for category in categories:
+#         for group_label in group_labels:
+#             file_path = f"{base_path}DEGPathwayEnrichment_{file_suffix}_{group_label}.txt"
+#             try:
+#                 data = []  # 데이터를 저장할 리스트
+#                 with open(file_path, 'r') as file:
+#                     for line in file:
+#                         parts = line.strip().split('\t')
+#                         # 첫 8개 컬럼만 추출 (더 많은 컬럼이 있으면 무시)
+#                         if len(parts) >= 8:
+#                             data.append(parts[:8])
+#                 columns = data[0]
+#                 df = pd.DataFrame(data[1:], columns=columns)
+#                 df = df.drop(columns=['Size (overlapping with base)'])  # Size 컬럼 제외
+#                 st.write(f"### {category} Enrichment for {group_label}")
+#                 st.dataframe(df)  # 데이터 프레임 표시
+#             except FileNotFoundError:
+#                 st.error(f"File not found: {file_path}")  
 
 def write_deg_page():
     create_header()
