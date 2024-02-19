@@ -49,7 +49,7 @@ def show_heatmap(genes_list, base_path):
         rows = (total_files + cols - 1) // cols
 
         gene_height = 20
-        max_genes_display = 20  # 최대로 표시할 유전자 수
+        max_genes_display = 40  # 최대로 표시할 유전자 수
         if len(genes_list) > max_genes_display:
             heatmap_height = max_genes_display * gene_height
             show_gene_labels = False  # 유전자 이름 표시 여부
