@@ -57,6 +57,8 @@ def plot_pca(sample_choice):
     pc1 = round(data_variance[0][0], 1)
     pc2 = round (data_variance[1][0], 1)
 
+    color_map = {f'{sample_choice[0]}' : 'green', f'{sample_choice[1]}' : 'orange'}
+
     # PCA 그리기
     st.subheader('PCA Plot')
     fig = px.scatter(
@@ -66,8 +68,12 @@ def plot_pca(sample_choice):
         labels={'1st PC (X-axis)': f'PC1 ({pc1}% variance)', '2nd PC (Y-axis)': f'PC2 ({pc2}% variance)'},
         color='SampleGroup', 
         symbol='SampleGroup',
-        color_discrete_sequence = px.colors.qualitative.Pastel1,
+        color_discrete_map=color_map,
         )
+    # 그룹들의 이름 변경
+    fig.update_traces(name=sample_choice[0][:-2] + ' [' + sample_choice[0][-2:] + ']', selector=dict(name=sample_choice[0]))
+    fig.update_traces(name=sample_choice[1][:-2] + ' [' + sample_choice[1][-2:] + ']', selector=dict(name=sample_choice[1]))
+
     st.plotly_chart(fig)
 
 def plot_volcano(sample_choice, p_value_choice, fold_change_choice):
@@ -105,11 +111,11 @@ def plot_volcano(sample_choice, p_value_choice, fold_change_choice):
     df.loc[(df['Log2FoldChange'] < threshold_fold) & (df['FDR-adjusted p-value'] > threshold_p), 'DEG Group'] = 'Down-regulated'
 
     # Volcano 그리기
-    st.subheader(f'Volcano Plot')
+    st.subheader('Volcano Plot')
 
     # 기준 수정
     group = sample_choice[0][:-2] + ' [' + sample_choice[0][-2:] + ']'
-    st.write(f'Group: {group}')
+    st.write(f'##### Group: {group}')
     fig = px.scatter(
         data_frame=df, 
         x='Log2FoldChange', 
@@ -159,7 +165,7 @@ def plot_volcano(sample_choice, p_value_choice, fold_change_choice):
     plot_heatmap(df, sample_choice)
 
 def show_table(df):
-    st.write('DEG List')
+    st.write('##### DEG List')
 
     filtered_df = df[df['DEG Group'].isin(['Up-regulated', 'Down-regulated'])]
     filtered_df = filtered_df.drop(columns=['DEG Group'])
@@ -229,8 +235,8 @@ def plot_heatmap(df, sample_choice):
     fig.update_layout(
         xaxis_title='Samples',
         yaxis_title='Gene name',
-        height=800,
-        width=800
+        height=700,
+        width=700
     )
     st.plotly_chart(fig)
 
