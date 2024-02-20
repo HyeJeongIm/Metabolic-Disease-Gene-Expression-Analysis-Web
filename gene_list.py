@@ -192,10 +192,13 @@ def plot_colored_network(df_interactions, df_correlation_filtered, genes_list):
                     correlation = df_correlation_filtered[(df_correlation_filtered['Gene'] == gene_pair[0]) & (df_correlation_filtered['Gene.1'] == gene_pair[1]) | (df_correlation_filtered['Gene'] == gene_pair[1]) & (df_correlation_filtered['Gene.1'] == gene_pair[0])]
                     if not correlation.empty:
                         color = 'red' if correlation['Correlation coefficient'].values[0] > 0 else 'blue'
+                        weight = abs(correlation['Correlation coefficient'].values[0])
+                        net.add_edge(gene_pair[0], gene_pair[1], color=color, value=weight, title=f"{weight}")
                     else:
                         color = 'lightgrey'  
+                        net.add_edge(gene_pair[0], gene_pair[1], color=color)
 
-                    net.add_edge(gene_pair[0], gene_pair[1], color=color)
+                    
 
         # 네트워크 그리기
         net.show_buttons(filter_=['physics'])
