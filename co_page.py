@@ -145,16 +145,18 @@ def show_df(selected_groups, threshold):
     combined_df = load_group_data(selected_groups, threshold)
     # 인덱스를 리셋하고, 기존 인덱스를 제거합니다.
     combined_df.reset_index(drop=True, inplace=True)
-    st.dataframe(combined_df.style.apply(color_rows, axis=1), width=600)
+    st.dataframe(combined_df.style.apply(color_rows, axis=1), width=600, hide_index=True)
 def color_rows(row):
+    styles = []
+
     if row['color'] == 'black':
-        return ['background-color: black'] * len(row)
+        styles.append('background-color: black; color: white')  # 흰색 텍스트
     elif row['color'] == 'orange':
-        return ['background-color: orange'] * len(row)
+        styles.append('background-color: orange; color: black')  # 검정색 텍스트
     elif row['color'] == 'green':
-        return ['background-color: green'] * len(row)
-    else:
-        return [''] * len(row)
+        styles.append('background-color: green; color: white')  # 흰색 텍스트
+
+    return styles * len(row)
     
 def write_co_page():
     create_header()
