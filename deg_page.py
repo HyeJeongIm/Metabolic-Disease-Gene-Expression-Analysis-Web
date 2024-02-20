@@ -178,7 +178,7 @@ def show_table(df):
     # 컬럼명 변경
     filtered_df = filtered_df.rename(columns={'Log2FoldChange' : 'Log₂ Fold-change', 'FDR-adjusted p-value' : 'P-value'})
 
-    st.dataframe(filtered_df.style.apply(color_rows, axis=1), width=600)
+    st.dataframe(filtered_df.style.apply(color_rows, axis=1), width=600, hide_index=True)
 
 def color_rows(row):
     if row['Log₂ Fold-change'] > 0:
@@ -266,7 +266,12 @@ def plot_pathway(group1, group2, p_value, fold_change, categories):
                 df = df.drop(columns=['Size (overlapping with base)'])  # 'Size (overlapping with base)' 컬럼 제외
 
                 st.write(f"### Category: {category}")
-                st.dataframe(df)  
+                st.dataframe(
+                    df, 
+                    hide_index=True, 
+                    column_config={
+                        'URL': st.column_config.LinkColumn('URL')
+                })
             except FileNotFoundError:
                 st.error(f"File not found: {file_path}")
 
