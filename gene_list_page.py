@@ -162,6 +162,24 @@ def load_correlation_data(group, threshold):
     df_correlation_filtered = df_correlation[df_correlation['Correlation coefficient'].abs() >= threshold]
     return df_correlation_filtered
 
+def show_legend():
+    legend_html = """
+    <div style="position: fixed; top: 10px; right: 10px; background-color: white; padding: 10px; border-radius: 10px; border: 1px solid #e1e4e8;">
+        <div style="display: inline-block; margin-right: 20px;">
+            <svg width="40" height="10">
+                <line x1="0" y1="5" x2="40" y2="5" style="stroke:red; stroke-width:2" />
+            </svg>
+            Positive correlation
+        </div>
+        <div style="display: inline-block;">
+            <svg width="40" height="10">
+                <line x1="0" y1="5" x2="40" y2="5" style="stroke:blue; stroke-width:2" />
+            </svg>
+            Negative correlation
+        </div>
+    </div>
+    """
+    components.html(legend_html, height=55)
 def write_gene_list_page():    
     create_header()
     
@@ -173,4 +191,5 @@ def write_gene_list_page():
 
     if st.button('Search'):
         show_heatmap(genes_list, base_path)
+        show_legend()
         show_interaction(genes_list)
