@@ -42,6 +42,7 @@ def load_group_data(group_names, threshold):
                 combined_df.at[idx, 'color'] = group_colors['overlap']
     
     return combined_df
+
 def show_legend():
     legend_html = """
     <div style="position: fixed; top: 10px; right: 10px; background-color: white; padding: 10px; border-radius: 10px; border: 1px solid #e1e4e8;">
@@ -139,13 +140,35 @@ def show_combined_network(selected_groups, threshold):
         components.html(net_html, height=800)
     else:
         st.error('No data to display based on the selected threshold.')
+        
 def color_rows(s):
     return ['color: white'] * len(s)
+
+def format_group_name(name):
+        # 그룹 이름의 마지막 2글자를 대괄호로 묶어서 반환
+        if len(name) > 2:
+            name = f"{name[:-2]} [{name[-2:]}]".replace("_", " ")
+            return name
+        else:
+            return name
+        
 def show_df(selected_groups, threshold):
     combined_df = load_group_data(selected_groups, threshold)
     # 인덱스를 리셋하고, 기존 인덱스를 제거합니다.
     combined_df.reset_index(drop=True, inplace=True)
-    st.dataframe(combined_df.style.apply(color_rows, axis=1), width=600, hide_index=True)
+    # 색상별로 데이터프레임 분리
+    df_black = combined_df[combined_df['color'] == 'black']
+    df_green = combined_df[combined_df['color'] == 'green']
+    df_orange = combined_df[combined_df['color'] == 'orange']
+    print(df_black.columns)
+    
+    st.write(f"### Group: {format_group_name(selected_groups[0])}")
+    st.dataframe(df_black.style.apply(color_rows, axis=1), width=600, hide_index=True)
+    st.write(f"### Group: {format_group_name(selected_groups[1])}")
+    st.dataframe(df_green.style.apply(color_rows, axis=1), width=600, hide_index=True)
+    st.write(f"### Group: Both")
+    st.dataframe(df_orange.style.apply(color_rows, axis=1), width=600, hide_index=True)
+    
 def color_rows(row):
     styles = []
 
