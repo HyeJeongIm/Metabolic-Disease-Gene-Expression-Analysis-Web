@@ -1,6 +1,9 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
+import matplotlib.pyplot as plt
+import seaborn as sns
 import os
 import numpy as np
 
@@ -150,6 +153,7 @@ def plot_volcano(sample_choice, p_value_choice, fold_change_choice):
     st.plotly_chart(fig)
 
     show_table(df)
+    plot_heatmap(df, sample_choice)
 
 def show_table(df):
     st.write('DEG List')
@@ -180,6 +184,53 @@ def color_rows(row):
         return ['background-color: #9cd3d3'] * len(row)
     else:
         return [''] * len(row)
+    
+def plot_heatmap(df, sample_choice):
+    st.subheader('Heatmap')
+
+    # 데이터프레임 전처리
+    filtered_df = df[df['DEG Group'].isin(['Up-regulated', 'Down-regulated'])]
+    filtered_df = filtered_df.rename(columns={'Gene' : 'Gene name'})
+    filtered_df = filtered_df.sort_values(by='DEG Group', ascending=True)
+
+    # 파일 경로 일반화
+    modified_path = sample_choice[0][:-2] + '_' + sample_choice[0][-2:]
+    file_path = f'./data/Gene Expression/Z_Score/GeneExpressionZ_{modified_path}.txt'
+
+    heatmap_data = pd.read_csv(file_path, sep='\t')
+    df_heatmap = pd.DataFrame(heatmap_data)
+
+    # 히트맵 그릴 데이터프레임
+    merged_df = pd.merge(df_heatmap, filtered_df, on='Gene name', how='inner')
+    merged_df = merged_df.drop(columns=['Log2FoldChange', 'FDR-adjusted p-value'])
+    # merged_df.set_index('Gene name', inplace=True)
+    merged_df = merged_df.sort_values(by='DEG Group', ascending=True)
+
+    colorscale = [
+            [0, "blue"],
+            [1/6, "blue"],
+            [1/2, "white"],
+            [5/6, "red"],
+            [1, "red"]
+        ]
+
+    # 히트맵 그리기
+    fig = go.Figure(data=go.Heatmap(
+        z=merged_df.drop(columns=['Gene name']).values,
+        x=merged_df.columns[1:],
+        y=merged_df['Gene name'],
+        colorscale=colorscale
+    ))
+
+    # 레이아웃 설정
+    fig.update_layout(
+        xaxis_title='Samples',
+        yaxis_title='Gene name',
+        height=800,
+        width=800
+    )
+    st.plotly_chart(fig)
+
 
 def plot_pathway(group1, group2, p_value, fold_change, categories):
     base_path = "data/DEG Pathway Enrichment Result/"
