@@ -106,7 +106,10 @@ def plot_volcano(sample_choice, p_value_choice, fold_change_choice):
 
     # Volcano 그리기
     st.subheader(f'Volcano Plot')
-    st.write(f'Group: {sample_choice[0]}')
+
+    # 기준 수정
+    group = sample_choice[0][:-2] + ' [' + sample_choice[0][-2:] + ']'
+    st.write(f'Group: {group}')
     fig = px.scatter(
         data_frame=df, 
         x='Log2FoldChange', 
