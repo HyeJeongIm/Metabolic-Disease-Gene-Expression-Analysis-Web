@@ -297,6 +297,8 @@ def plot_colored_network(df_interactions, df_correlation, gene_name):
     for _, interaction_row in df_interactions.iterrows():
         src, dst = interaction_row['Official Symbol Interactor A'], interaction_row['Official Symbol Interactor B']
         color = 'lightgrey'  # 기본 색상
+        weight = None
+
         correlation_row = df_correlation[((df_correlation['Gene'] == src) & (df_correlation['Gene.1'] == dst)) | 
                                          ((df_correlation['Gene'] == dst) & (df_correlation['Gene.1'] == src))]
         
@@ -305,7 +307,8 @@ def plot_colored_network(df_interactions, df_correlation, gene_name):
         if not correlation_row.empty:
             correlation = correlation_row.iloc[0]['Correlation coefficient']
             color = 'red' if correlation > 0 else 'blue'
-            weight = correlation_row['Correlation coefficient']
+            if color in ['red', 'blue']:
+                weight = correlation
         # create_network(correlation_row)
         # 노드 추가
         for node in [src, dst]:
@@ -315,10 +318,10 @@ def plot_colored_network(df_interactions, df_correlation, gene_name):
                 seen_nodes.add(node)
 
         # 상관관계에 따라 색상이 지정된 엣지 추가
-        if node_color in ['orange', 'grey']:
-            net.add_edge(src, dst, color=color)
+        if weight is not None:
+            net.add_edge(src, dst, color=color, value=abs(weight), title=f"{weight}")
         else:
-            net.add_edge(src, dst, color=color, value=abs(weight))
+            net.add_edge(src, dst, color=color)
 
     net.show_buttons(filter_=['physics'])
     net.show("pyvis_net_graph.html")
