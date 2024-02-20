@@ -97,21 +97,21 @@ def plot_volcano(sample_choice, p_value_choice, fold_change_choice):
     threshold_fold = -np.log2(fold_change_choice)
     threshold_p = -np.log10(p_value_choice)
 
-    df['Class'] = 'NoDiff'
-    df.loc[(df['Log2FoldChange'] > -threshold_fold) & (df['FDR-adjusted p-value'] > threshold_p), 'Class'] = 'Fold up'
-    df.loc[(df['Log2FoldChange'] < threshold_fold) & (df['FDR-adjusted p-value'] > threshold_p), 'Class'] = 'Fold down'
+    df['DEG Group'] = 'No significant change'
+    df.loc[(df['Log2FoldChange'] > -threshold_fold) & (df['FDR-adjusted p-value'] > threshold_p), 'DEG Group'] = 'Up-regulated'
+    df.loc[(df['Log2FoldChange'] < threshold_fold) & (df['FDR-adjusted p-value'] > threshold_p), 'DEG Group'] = 'Down-regulated'
 
     # Volcano 그리기
     st.subheader(f'Volcano Plot')
-    st.write(f'Criteria: {sample_choice[0]}')
+    st.write(f'Group: {sample_choice[0]}')
     fig = px.scatter(
         data_frame=df, 
         x='Log2FoldChange', 
         y='FDR-adjusted p-value',  
-        color='Class',
-        color_discrete_map={'NoDiff': 'lightgray', 'Fold up': '#f48db4', 'Fold down': '#9cd3d3'},
+        color='DEG Group',
+        color_discrete_map={'No significant change': 'lightgray', 'Up-regulated': '#f48db4', 'Down-regulated': '#9cd3d3'},
         color_discrete_sequence = px.colors.qualitative.Pastel1,
-        hover_data={'Class': False},
+        hover_data={'DEG Group': False},
         )
     fig.add_shape(
         dict(
@@ -144,24 +144,39 @@ def plot_volcano(sample_choice, p_value_choice, fold_change_choice):
         )
     )
     fig.update_layout(
-        xaxis_title="Log2 fold change",
-        yaxis_title="-Log10 adjusted P",
-        # showlegend=False,
+        xaxis_title="Log<sub>2</sub> (fold change)",
+        yaxis_title="-Log<sub>10</sub> (adjusted P)",
     )
     st.plotly_chart(fig)
 
     show_table(df)
 
 def show_table(df):
-    filtered_df = df[df['Class'].isin(['Fold up', 'Fold down'])]
+    st.write('DEG List')
+
+    filtered_df = df[df['DEG Group'].isin(['Up-regulated', 'Down-regulated'])]
+    filtered_df = filtered_df.drop(columns=['DEG Group'])
     filtered_df= filtered_df.sort_values(by='FDR-adjusted p-value', ascending=True)
 
-    st.dataframe(filtered_df.style.apply(color_rows, axis=1), width=1000)
+    # p-value 값 다시 가져오기
+    filtered_df['FDR-adjusted p-value'] = 10**(-filtered_df['FDR-adjusted p-value'])
+
+    # p-value를 지수 형식으로 변환
+    filtered_df['FDR-adjusted p-value'] = filtered_df['FDR-adjusted p-value'].apply(lambda x: format(x, '.6e'))
+
+    # 인덱스 재설정 및 인덱스 값 조정
+    filtered_df = filtered_df.reset_index(drop=True)
+    filtered_df.index += 1
+    
+    # 컬럼명 변경
+    filtered_df = filtered_df.rename(columns={'Log2FoldChange' : 'Log₂ Fold-change', 'FDR-adjusted p-value' : 'P-value'})
+
+    st.dataframe(filtered_df.style.apply(color_rows, axis=1), width=600)
 
 def color_rows(row):
-    if row['Class'] == 'Fold up':
+    if row['Log₂ Fold-change'] > 0:
         return ['background-color: #f48db4'] * len(row)
-    elif row['Class'] == 'Fold down':
+    elif row['Log₂ Fold-change'] < 0:
         return ['background-color: #9cd3d3'] * len(row)
     else:
         return [''] * len(row)
