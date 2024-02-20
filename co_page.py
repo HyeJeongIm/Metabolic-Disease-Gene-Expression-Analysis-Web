@@ -18,7 +18,7 @@ def load_data(file_path, threshold):
 def load_group_data(group_names, threshold):
     combined_df = pd.DataFrame()
     # 각 그룹별로 색상 지정
-    group_colors = {group_names[0]: 'blue', group_names[1]: 'red', 'overlap': 'green'}
+    group_colors = {group_names[0]: 'green', group_names[1]: 'orange', 'overlap': 'black'}
     
     group_data = {}
     for group in group_names:
@@ -42,16 +42,39 @@ def load_group_data(group_names, threshold):
                 combined_df.at[idx, 'color'] = group_colors['overlap']
     
     return combined_df
+def show_legend():
+    legend_html = """
+    <div style="position: fixed; top: 10px; right: 10px; background-color: white; padding: 10px; border-radius: 10px; border: 1px solid #e1e4e8;">
+        <div style="display: inline-block; margin-right: 20px;">
+            <svg width="40" height="10">
+                <line x1="0" y1="5" x2="40" y2="5" style="stroke:red; stroke-width:2" />
+            </svg>
+            Positive correlation
+        </div>
+        <div style="display: inline-block;">
+            <svg width="40" height="10">
+                <line x1="0" y1="5" x2="40" y2="5" style="stroke:blue; stroke-width:2" />
+            </svg>
+            Negative correlation
+        </div>
+    </div>
+    """
+    components.html(legend_html, height=55)
 
+# 1개 그룹 선택 
 def create_network(df, file_name):
     net = Network(height='750px', width='100%', bgcolor='#ffffff', font_color='black')
     for index, row in df.iterrows():
         gene1 = row['Gene']
         gene2 = row['Gene.1']
         weight = row['Correlation coefficient']
-        net.add_node(gene1, label=gene1, title=gene1)
-        net.add_node(gene2, label=gene2, title=gene2)
-        net.add_edge(gene1, gene2, title=str(weight), value=abs(weight))
+        
+        # 상관계수 값에 따라 엣지 색상 결정
+        edge_color = 'red' if weight > 0 else 'blue'
+        
+        net.add_node(gene1, label=gene1, color='grey', title=gene1)
+        net.add_node(gene2, label=gene2, color='grey', title=gene2)
+        net.add_edge(gene1, gene2, title=str(weight), value=abs(weight), color=edge_color)
     return net
 
 def show_network(file_path, threshold):
@@ -73,13 +96,40 @@ def create_group_network(df, bgcolor='#ffffff', font_color='black'):
         gene1 = row['Gene']
         gene2 = row['Gene.1']
         weight = row['Correlation coefficient']
+        color = row['color']  # 엣지 색상 지정
         
-        color = row['color']
-        net.add_node(gene1, label=gene1, title=f"{gene1}: {weight}", color=color)
-        net.add_node(gene2, label=gene2, title=f"{gene2}: {weight}", color=color)
+        # 노드 색상을 'lightgrey'로 고정
+        net.add_node(gene1, label=gene1, title=f"{gene1}: {weight}", color='grey')
+        net.add_node(gene2, label=gene2, title=f"{gene2}: {weight}", color='grey')
+        # 엣지 색상 적용
         net.add_edge(gene1, gene2, title=f"{weight}", value=abs(weight), color=color)
     return net
 
+'''
+    2개 그룹 선택
+'''
+def show_group_legend(group_names):
+    # 그룹 이름 형식 변경: "Muscle_OD" -> "Muscle [OD]"
+    formatted_group_names = [name.replace("_", " [") + "]" if "_" in name else name for name in group_names]
+
+    legend_html = f"""
+    <div style="position: fixed; top: 10px; right: 10px; background-color: white; padding: 10px; border-radius: 10px; border: 1px solid #e1e4e8;">
+        <div style="display: inline-block; margin-right: 20px;">
+            <svg width="40" height="10"><line x1="0" y1="5" x2="40" y2="5" style="stroke:green; stroke-width:2"></line></svg>
+            {formatted_group_names[0]} (green)
+        </div>
+        <div style="display: inline-block; margin-right: 20px;">
+            <svg width="40" height="10"><line x1="0" y1="5" x2="40" y2="5" style="stroke:orange; stroke-width:2"></line></svg>
+            {formatted_group_names[1]} (orange)
+        </div>
+        <div style="display: inline-block;">
+            <svg width="40" height="10"><line x1="0" y1="5" x2="40" y2="5" style="stroke:black; stroke-width:2"></line></svg>
+            Overlap (black)
+        </div>
+    </div>
+    """
+    components.html(legend_html, height=55)  
+    
 def show_combined_network(selected_groups, threshold):
     combined_df = load_group_data(selected_groups, threshold)
     
@@ -89,16 +139,23 @@ def show_combined_network(selected_groups, threshold):
         components.html(net_html, height=800)
     else:
         st.error('No data to display based on the selected threshold.')
-
-def show_color(selected_groups):
-    groups = {selected_groups[0]: '#0000FF', selected_groups[1]: '#FF0000', f'{selected_groups[0]} & {selected_groups[1]}': '#008000'}
+def color_rows(s):
+    return ['color: white'] * len(s)
+def show_df(selected_groups, threshold):
+    combined_df = load_group_data(selected_groups, threshold)
+    # 인덱스를 리셋하고, 기존 인덱스를 제거합니다.
+    combined_df.reset_index(drop=True, inplace=True)
+    st.dataframe(combined_df.style.apply(color_rows, axis=1), width=600)
+def color_rows(row):
+    if row['color'] == 'black':
+        return ['background-color: black'] * len(row)
+    elif row['color'] == 'orange':
+        return ['background-color: orange'] * len(row)
+    elif row['color'] == 'green':
+        return ['background-color: green'] * len(row)
+    else:
+        return [''] * len(row)
     
-    columns = st.columns(3)
-    for i, (group, color) in enumerate(groups.items()):
-        with columns[i % 3]:
-            st.markdown(f'<div style="display:flex;align-items:center;"><div style="width:18px;height:18px;background-color:{color};border-radius:5px;"></div><span style="margin-left:8px;">{group}</span></div>', unsafe_allow_html=True)
-            st.write("")
-
 def write_co_page():
     create_header()
     sample_class = ['Adipose_LH', 'Adipose_OH', 'Adipose_OD',
@@ -112,11 +169,13 @@ def write_co_page():
             group = selected_groups[0]
             file_path = os.path.join('data', 'Gene-Gene Expression Correlation', 'Correlation Higher Than 0.5', f'GeneGene_HighCorrelation_{group}_0.5.txt')
             if os.path.isfile(file_path):
+                show_legend()
                 show_network(file_path, threshold)
             else:
                 st.error(f"File for {group} does not exist.")
         elif len(selected_groups) == 2:
-            show_color(selected_groups)
+            show_group_legend(selected_groups)
             show_combined_network(selected_groups, threshold)
+            show_df(selected_groups, threshold)
         else:
             st.error("Please select one or two groups.")
