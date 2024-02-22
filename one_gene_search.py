@@ -78,10 +78,13 @@ def show_box_plot(name, z_score=False):
     </style>
     """, unsafe_allow_html=True)
 
-    # 라디오 버튼으로 변환 옵션 선택
+    # Markdown을 사용하여 굵은 텍스트로 라벨을 표시
+    st.markdown("**Expression transform:**")
+
+    # st.radio에서 라벨을 제거하고 옵션만 표시
     transform = st.radio(
-        "Expression transform:", 
-        ['Raw', 'Z-Score'], 
+        "",  # 라벨 부분을 비워둠
+        ['Raw', 'Z-Score'],
         index=int(st.session_state.get('z_score', False))
     )
 
@@ -353,15 +356,24 @@ def show_network_diagram(gene_name):
     df_interactions = load_network_data(gene_name)
     
     # threshold 및 group 선택
+    # 원본 sample_class 리스트
     sample_class = ['Adipose_LH', 'Adipose_OH', 'Adipose_OD',
                     'Liver_LH', 'Liver_OH', 'Liver_OD',
                     'Muscle_LH', 'Muscle_OH', 'Muscle_OD']
-    group = st.selectbox('Choose one group', sample_class, key='sample_input')
+
+    formatted_sample_class = [s.replace('_', ' [') + ']' for s in sample_class]
+    group = st.selectbox('Choose one group', formatted_sample_class, key='sample_input')
+
+    # 사용자가 선택한 값을 실제 값으로 매핑하기 위한 딕셔너리 생성
+    value_mapping = {formatted: original for formatted, original in zip(formatted_sample_class, sample_class)}
+
+    # 선택된 그룹의 실제 값을 가져옴
+    selected_group_value = value_mapping[group]
     threshold = st.number_input('Enter threshold:', min_value=0.0, value=0.5, step=0.01)
     
     # group 및 threshold를 선택하면 그려짐
     if st.button('Create Correlation Network'):
-        df_correlation = load_correlation_data(group, threshold)
+        df_correlation = load_correlation_data(selected_group_value, threshold)
         show_legend()
         plot_colored_network(df_interactions, df_correlation, gene_name)
     else: 
