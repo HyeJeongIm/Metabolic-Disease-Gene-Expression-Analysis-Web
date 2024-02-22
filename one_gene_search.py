@@ -158,13 +158,27 @@ def plot_initial_pyvis(df, gene_name):
                 seen_nodes.add(node)
 
         net.add_edge(src, dst, color='lightgrey')
+    
+    layout_option = st.selectbox('Layout Options', ['Hide', 'Show'])
 
-    net.show_buttons(filter_=['physics'])
+    # option layout
+    if layout_option == 'Show':
+        net.show_buttons(filter_=['physics'])
+
     net.show("pyvis_net_graph.html")
 
-    HtmlFile = open('pyvis_net_graph.html', 'r', encoding='utf-8')
+    HtmlFile = open("pyvis_net_graph.html", 'r', encoding='utf-8')
     source_code = HtmlFile.read() 
-    components.html(source_code, width=670, height=1070)       
+    st.components.v1.html(source_code, width=670, height=1070)
+    
+    
+    
+    # net.show_buttons(filter_=['physics'])
+    # net.show("pyvis_net_graph.html")
+
+    # HtmlFile = open('pyvis_net_graph.html', 'r', encoding='utf-8')
+    # source_code = HtmlFile.read() 
+    # components.html(source_code, width=670, height=1070)       
 
 # 데이터 로드 및 필터링 함수
 def load_group_data(group, gene_name, threshold, df_interactions):
