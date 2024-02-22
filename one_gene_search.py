@@ -140,6 +140,9 @@ def load_network_data(gene_name):
     return interactions 
      
 def plot_initial_pyvis(df, gene_name):
+    st.title("Network")
+    st.markdown(f"**Non interaction around '{gene_name}'**", unsafe_allow_html=True)
+
     net = Network(notebook=True, directed=False)
     # 이미 추가된 노드를 추적하기 위함
     seen_nodes = set()  
