@@ -78,10 +78,13 @@ def show_box_plot(name, z_score=False):
     </style>
     """, unsafe_allow_html=True)
 
-    # 라디오 버튼으로 변환 옵션 선택
+    # Markdown을 사용하여 굵은 텍스트로 라벨을 표시
+    st.markdown("**Expression transform:**")
+
+    # st.radio에서 라벨을 제거하고 옵션만 표시
     transform = st.radio(
-        "Expression transform:", 
-        ['Raw', 'Z-Score'], 
+        "",  # 라벨 부분을 비워둠
+        ['Raw', 'Z-Score'],
         index=int(st.session_state.get('z_score', False))
     )
 
@@ -137,6 +140,9 @@ def load_network_data(gene_name):
     return interactions 
      
 def plot_initial_pyvis(df, gene_name):
+    st.title("Network")
+    st.markdown(f"**Non interaction around '{gene_name}'**", unsafe_allow_html=True)
+
     net = Network(notebook=True, directed=False)
     # 이미 추가된 노드를 추적하기 위함
     seen_nodes = set()  
@@ -155,13 +161,27 @@ def plot_initial_pyvis(df, gene_name):
                 seen_nodes.add(node)
 
         net.add_edge(src, dst, color='lightgrey')
+    
+    layout_option = st.selectbox('Layout Options', ['Hide', 'Show'])
 
-    net.show_buttons(filter_=['physics'])
+    # option layout
+    if layout_option == 'Show':
+        net.show_buttons(filter_=['physics'])
+
     net.show("pyvis_net_graph.html")
 
-    HtmlFile = open('pyvis_net_graph.html', 'r', encoding='utf-8')
+    HtmlFile = open("pyvis_net_graph.html", 'r', encoding='utf-8')
     source_code = HtmlFile.read() 
-    components.html(source_code, width=670, height=1070)       
+    st.components.v1.html(source_code, width=670, height=1070)
+    
+    
+    
+    # net.show_buttons(filter_=['physics'])
+    # net.show("pyvis_net_graph.html")
+
+    # HtmlFile = open('pyvis_net_graph.html', 'r', encoding='utf-8')
+    # source_code = HtmlFile.read() 
+    # components.html(source_code, width=670, height=1070)       
 
 # 데이터 로드 및 필터링 함수
 def load_group_data(group, gene_name, threshold, df_interactions):
@@ -353,15 +373,24 @@ def show_network_diagram(gene_name):
     df_interactions = load_network_data(gene_name)
     
     # threshold 및 group 선택
+    # 원본 sample_class 리스트
     sample_class = ['Adipose_LH', 'Adipose_OH', 'Adipose_OD',
                     'Liver_LH', 'Liver_OH', 'Liver_OD',
                     'Muscle_LH', 'Muscle_OH', 'Muscle_OD']
-    group = st.selectbox('Choose one group', sample_class, key='sample_input')
+
+    formatted_sample_class = [s.replace('_', ' [') + ']' for s in sample_class]
+    group = st.selectbox('Choose one group', formatted_sample_class, key='sample_input')
+
+    # 사용자가 선택한 값을 실제 값으로 매핑하기 위한 딕셔너리 생성
+    value_mapping = {formatted: original for formatted, original in zip(formatted_sample_class, sample_class)}
+
+    # 선택된 그룹의 실제 값을 가져옴
+    selected_group_value = value_mapping[group]
     threshold = st.number_input('Enter threshold:', min_value=0.0, value=0.5, step=0.01)
     
     # group 및 threshold를 선택하면 그려짐
     if st.button('Create Correlation Network'):
-        df_correlation = load_correlation_data(group, threshold)
+        df_correlation = load_correlation_data(selected_group_value, threshold)
         show_legend()
         plot_colored_network(df_interactions, df_correlation, gene_name)
     else: 
