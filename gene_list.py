@@ -90,7 +90,12 @@ def show_heatmap(genes_list, base_path):
                         x=heatmap_data.columns.tolist(),
                         y=heatmap_data.index.tolist() if show_gene_labels else [],
                         colorscale=colorscale,
-                        colorbar=dict(tickvals=[], ticktext=[]),
+                        zmin=-3,  # 최소 z값 설정
+                        zmax=3,   # 최대 z값 설정
+                        colorbar=dict(
+                            tickvals=[-3, 0, 3],  # colorbar에 표시될 주요 눈금값
+                            ticktext=['-3', '0', '3']  # 눈금에 해당하는 텍스트
+                        ),
                     ),
                     row=row, col=col
                 )
@@ -99,7 +104,6 @@ def show_heatmap(genes_list, base_path):
                     fig.update_yaxes(row=row, col=col)
                 else:
                     fig.update_yaxes(showticklabels=False, row=row, col=col)
-
             except FileNotFoundError:
                 st.error(f'File not found: {file}')
             except KeyError:
