@@ -34,6 +34,8 @@ def custom_sort_key(file_name):
     return (tissue, condition_order.get(condition, 99))
 
 def show_heatmap(genes_list, base_path):
+    st.subheader('Heatmap')
+
     if genes_list:
         file_list = os.listdir(base_path)
         sorted_files = sorted(file_list, key=custom_sort_key)
@@ -88,7 +90,12 @@ def show_heatmap(genes_list, base_path):
                         x=heatmap_data.columns.tolist(),
                         y=heatmap_data.index.tolist() if show_gene_labels else [],
                         colorscale=colorscale,
-                        colorbar=dict(tickvals=[], ticktext=[]),
+                        zmin=-3,  # 최소 z값 설정
+                        zmax=3,   # 최대 z값 설정
+                        colorbar=dict(
+                            tickvals=[-3, 0, 3],  # colorbar에 표시될 주요 눈금값
+                            ticktext=['-3', '0', '3']  # 눈금에 해당하는 텍스트
+                        ),
                     ),
                     row=row, col=col
                 )
@@ -97,18 +104,18 @@ def show_heatmap(genes_list, base_path):
                     fig.update_yaxes(row=row, col=col)
                 else:
                     fig.update_yaxes(showticklabels=False, row=row, col=col)
-
             except FileNotFoundError:
                 st.error(f'File not found: {file}')
             except KeyError:
                 st.error(f'One or more genes not found in file: {file}')
 
-        total_height = heatmap_height * rows
+        extra_space_per_row = 50  # 각 행의 추가 공간. 필요에 따라 조정
+        total_height = heatmap_height * rows + extra_space_per_row * (rows - 1)
 
         fig.update_layout(
             width=900,
-            height=max(total_height, 600),  
-            title_text='Heatmaps for All Files in Z_Score Directory',
+            height=max(total_height, 600),  # 최소 높이를 보장하면서 전체 높이 조정
+            title_text='Heatmap for All Sample Group',
             showlegend=False,
         )
 
