@@ -310,6 +310,8 @@ def create_network(df):
 
 ########### 후보0
 def plot_colored_network(df_interactions, df_correlation, gene_name):
+    st.title("Network")
+    st.markdown(f"**interaction around '{gene_name}'**", unsafe_allow_html=True)
     net = Network(notebook=True, directed=False, cdn_resources='remote')
     seen_nodes = set()
 
@@ -343,7 +345,11 @@ def plot_colored_network(df_interactions, df_correlation, gene_name):
         else:
             net.add_edge(src, dst, color=color)
 
-    net.show_buttons(filter_=['physics'])
+    layout_option = st.selectbox('Layout Options', ['Hide', 'Show'])
+
+    # option layout
+    if layout_option == 'Show':
+        net.show_buttons(filter_=['physics'])
     net.show("pyvis_net_graph.html")
 
     HtmlFile = open('pyvis_net_graph.html', 'r', encoding='utf-8')
@@ -379,14 +385,14 @@ def show_network_diagram(gene_name):
                     'Muscle_LH', 'Muscle_OH', 'Muscle_OD']
 
     formatted_sample_class = [s.replace('_', ' [') + ']' for s in sample_class]
-    group = st.selectbox('Choose one group', formatted_sample_class, key='sample_input')
+    group = st.selectbox('Choose sample group', formatted_sample_class, key='sample_input')
 
     # 사용자가 선택한 값을 실제 값으로 매핑하기 위한 딕셔너리 생성
     value_mapping = {formatted: original for formatted, original in zip(formatted_sample_class, sample_class)}
 
     # 선택된 그룹의 실제 값을 가져옴
     selected_group_value = value_mapping[group]
-    threshold = st.number_input('Enter threshold:', min_value=0.0, value=0.5, step=0.01)
+    threshold = st.number_input('Enter threshold of absolute correlation coefficient:', min_value=0.0, value=0.5, step=0.01)
     
     # group 및 threshold를 선택하면 그려짐
     if st.button('Create Correlation Network'):
@@ -395,3 +401,5 @@ def show_network_diagram(gene_name):
         plot_colored_network(df_interactions, df_correlation, gene_name)
     else: 
         plot_initial_pyvis(df_interactions, gene_name)
+        
+        
