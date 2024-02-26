@@ -12,12 +12,12 @@ def create_header():
                 
 def create_search_area():
     # selectbox를 위한 값 선언
-    sample_class = ['AdiposeLH', 'AdiposeOH', 'AdiposeOD',
-              'LiverLH', 'LiverOH', 'LiverOD',
-              'MuscleLH', 'MuscleOH', 'MuscleOD']
+    sample_class = ['Adipose [LH]', 'Adipose [OH]', 'Adipose [OD]',
+              'Liver [LH]', 'Liver [OH]', 'Liver [OD]',
+              'Muscle [LH]', 'Muscle [OH]', 'Muscle [OD]']
     p_value = [0.05, 0.01, 0.001]
     fold_change = [1.5, 2, 3]
-    pathway = ['Pathway', 'Go', 'Hallmark']
+    pathway = ['Pathway', 'GO', 'Hallmark']
 
     # search box들
     sample_choice = st.multiselect('Choose two groups', sample_class, max_selections=2, key='sample_input')
@@ -26,9 +26,10 @@ def create_search_area():
     pathway_choice = st.multiselect('Choose the pathway', pathway, key='pathway_input')
 
     if st.button('Search'):
-        plot_pca(sample_choice)
-        plot_volcano(sample_choice, p_value_choice, fold_change_choice)
-        plot_pathway(sample_choice[0], sample_choice[1], p_value_choice, fold_change_choice, pathway_choice)
+        samples = format_sample(sample_choice)
+        plot_pca(samples)
+        plot_volcano(samples, p_value_choice, fold_change_choice)
+        plot_pathway(samples[0], samples[1], p_value_choice, fold_change_choice, pathway_choice)
 
     # session_state 때문에 죽여둠
     # if st.button('Search'):
@@ -38,6 +39,13 @@ def create_search_area():
     # if 'search_pressed' in st.session_state and st.session_state['search_pressed']:
     #     plot_pca(sample_choice)
     #     plot_volcano(sample_choice, p_value_choice, fold_change_choice)
+        
+def format_sample(sample_choice):
+    for key in range(len(sample_choice)):
+        sample_choice[key] = sample_choice[key][:7] + sample_choice[key][9:11]
+
+    return sample_choice
+        
 
 def plot_pca(sample_choice):
     # PCA에 사용할 데이터 파일 불러오기
@@ -175,7 +183,7 @@ def show_table(df):
     filtered_df['FDR-adjusted p-value'] = 10**(-filtered_df['FDR-adjusted p-value'])
 
     # p-value를 지수 형식으로 변환
-    filtered_df['FDR-adjusted p-value'] = filtered_df['FDR-adjusted p-value'].apply(lambda x: format(x, '.6e'))
+    # filtered_df['FDR-adjusted p-value'] = filtered_df['FDR-adjusted p-value'].apply(lambda x: format(x, '.6e'))
 
     # 인덱스 재설정 및 인덱스 값 조정
     filtered_df = filtered_df.reset_index(drop=True)
@@ -184,7 +192,13 @@ def show_table(df):
     # 컬럼명 변경
     filtered_df = filtered_df.rename(columns={'Log2FoldChange' : 'Log₂ Fold-change', 'FDR-adjusted p-value' : 'P-value'})
 
-    st.dataframe(filtered_df.style.apply(color_rows, axis=1), width=600, hide_index=True)
+    st.dataframe(
+        filtered_df,#.style.apply(color_rows, axis=1), 
+        width=600, 
+        hide_index=True,
+        column_config={
+            'P-value' : st.column_config.NumberColumn(format='%.6e')
+        })
 
 def color_rows(row):
     if row['Log₂ Fold-change'] > 0:
@@ -215,11 +229,19 @@ def plot_heatmap(df, sample_choice):
     # merged_df.set_index('Gene name', inplace=True)
     merged_df = merged_df.sort_values(by='DEG Group', ascending=True)
 
+    numeric_cols = merged_df.select_dtypes(include=['number']).columns  # 숫자형 열만 선택
+    min_val = merged_df[numeric_cols].min().min()  # 숫자형 열의 최소값
+    max_val = merged_df[numeric_cols].max().max()  # 숫자형 열의 최대값
+    mid_val = (min_val + max_val) / 2  # 최소값과 최대값의 중간값
+
+    if min_val < 0 and max_val > 0:
+        mid_val = 0  # 최소값이 음수이고 최대값이 양수인 경우 0을 기준으로 설정
+    else:
+        mid_val = (min_val + max_val) / 2  # 그 외에는 최소값과 최대값의 중간값 사용
+
     colorscale = [
             [0, "blue"],
-            [1/6, "blue"],
-            [1/2, "white"],
-            [5/6, "red"],
+            [((mid_val - min_val) / (max_val - min_val)), "white"],
             [1, "red"]
         ]
 
@@ -270,16 +292,23 @@ def plot_pathway(group1, group2, p_value, fold_change, categories):
                 columns = data[0]  # 첫 줄을 컬럼명으로 사용
                 df = pd.DataFrame(data[1:], columns=columns)  
                 df = df.drop(columns=['Size (overlapping with base)'])  # 'Size (overlapping with base)' 컬럼 제외
+        
+                # 해당하는 category만 추출
+                filtered_df = df[df['Category'] == category]
+                filtered_df = filtered_df.drop(columns=['Category'])
 
                 st.write(f"### Category: {category}")
+
                 st.dataframe(
-                    df, 
-                    hide_index=True, 
+                    filtered_df, 
+                    hide_index=True,
                     column_config={
-                        'URL': st.column_config.LinkColumn('URL')
-                })
+                        'URL': st.column_config.LinkColumn(display_text='🔗')
+                    })
+
             except FileNotFoundError:
                 st.error(f"File not found: {file_path}")
+
 
 ### 같은 category에 대해 "All", group1, group2 순서대로 결과를 표시
 # def plot_pathway(group1, group2, p_value, fold_change, categories):
