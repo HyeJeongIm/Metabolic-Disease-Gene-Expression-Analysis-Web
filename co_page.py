@@ -1,10 +1,9 @@
 import streamlit as st
 import pandas as pd
-import networkx as nx
+import base64
 import os
 from pyvis.network import Network
 import streamlit.components.v1 as components
-from itertools import combinations
 
 def create_header():
     st.title('Co-Expression Network Analysis')
@@ -58,25 +57,29 @@ def show_legend():
             </svg>
             Negative correlation
         </div>
+        <div style="margin-top: 10px;">
+            You can zoom in and out.
+        </div>
     </div>
     """
-    components.html(legend_html, height=55)
+    components.html(legend_html, height=100)
 
 # 1개 그룹 선택 
 def create_network(df, file_name):
-    net = Network(height='750px', width='100%', bgcolor='#ffffff', font_color='black')
-    for index, row in df.iterrows():
-        gene1 = row['Gene']
-        gene2 = row['Gene.1']
-        weight = row['Correlation coefficient']
-        
-        # 상관계수 값에 따라 엣지 색상 결정
-        edge_color = 'red' if weight > 0 else 'blue'
-        
-        net.add_node(gene1, label=gene1, color='grey', title=gene1)
-        net.add_node(gene2, label=gene2, color='grey', title=gene2)
-        net.add_edge(gene1, gene2, title=str(weight), value=abs(weight), color=edge_color)
-    return net
+    with st.spinner('Drawing a graph'):
+        net = Network(height='750px', width='100%', bgcolor='#ffffff', font_color='black')
+        for index, row in df.iterrows():
+            gene1 = row['Gene']
+            gene2 = row['Gene.1']
+            weight = row['Correlation coefficient']
+            
+            # 상관계수 값에 따라 엣지 색상 결정
+            edge_color = 'red' if weight > 0 else 'blue'
+            
+            net.add_node(gene1, label=gene1, color='grey', title=gene1)
+            net.add_node(gene2, label=gene2, color='grey', title=gene2)
+            net.add_edge(gene1, gene2, title=str(weight), value=abs(weight), color=edge_color)
+        return net
 
 def show_network(file_path, threshold):
     filtered_df = load_data(file_path, threshold)
@@ -92,19 +95,20 @@ def show_network(file_path, threshold):
         st.error('No data to display.')
         
 def create_group_network(df, bgcolor='#ffffff', font_color='black'):
-    net = Network(height='750px', width='100%', bgcolor=bgcolor, font_color=font_color)
-    for index, row in df.iterrows():
-        gene1 = row['Gene']
-        gene2 = row['Gene.1']
-        weight = row['Correlation coefficient']
-        color = row['color']  # 엣지 색상 지정
-        
-        # 노드 색상을 'lightgrey'로 고정
-        net.add_node(gene1, label=gene1, title=f"{gene1}: {weight}", color='grey')
-        net.add_node(gene2, label=gene2, title=f"{gene2}: {weight}", color='grey')
-        # 엣지 색상 적용
-        net.add_edge(gene1, gene2, title=f"{weight}", value=abs(weight), color=color)
-    return net
+    with st.spinner('Drawing a graph'):
+        net = Network(height='750px', width='100%', bgcolor=bgcolor, font_color=font_color)
+        for index, row in df.iterrows():
+            gene1 = row['Gene']
+            gene2 = row['Gene.1']
+            weight = row['Correlation coefficient']
+            color = row['color']  # 엣지 색상 지정
+            
+            # 노드 색상을 'lightgrey'로 고정
+            net.add_node(gene1, label=gene1, title=f"{gene1}: {weight}", color='grey')
+            net.add_node(gene2, label=gene2, title=f"{gene2}: {weight}", color='grey')
+            # 엣지 색상 적용
+            net.add_edge(gene1, gene2, title=f"{weight}", value=abs(weight), color=color)
+        return net
 
 '''
     2개 그룹 선택
@@ -127,9 +131,12 @@ def show_group_legend(group_names):
             <svg width="40" height="10"><line x1="0" y1="5" x2="40" y2="5" style="stroke:black; stroke-width:2"></line></svg>
             Overlap (black)
         </div>
+        <div style="margin-top: 10px;">
+            You can zoom in and out.
+        </div>
     </div>
     """
-    components.html(legend_html, height=55)  
+    components.html(legend_html, height=100)  
     
 def show_combined_network(selected_groups, threshold):
     combined_df = load_group_data(selected_groups, threshold)
@@ -183,24 +190,49 @@ def color_rows(row):
     
 def write_co_page():
     create_header()
-    sample_class = ['Adipose_LH', 'Adipose_OH', 'Adipose_OD',
-                    'Liver_LH', 'Liver_OH', 'Liver_OD',
-                    'Muscle_LH', 'Muscle_OH', 'Muscle_OD']
-    selected_groups = st.multiselect('Choose one or two groups', sample_class, key='sample_input')
-    threshold = st.number_input('Enter threshold:', min_value=0.0, value=0.5, step=0.01)
+    sample_class = ['Adipose [LH]', 'Adipose [OH]', 'Adipose [OD]',
+                    'Liver [LH]', 'Liver [OH]', 'Liver [OD]',
+                    'Muscle [LH]', 'Muscle [OH]', 'Muscle [OD]']
+    selected_groups = st.multiselect('Choose one or two groups', sample_class, key='sample_input', max_selections=2)
+    threshold = st.number_input('Enter threshold (Using threshold less than 0.9 can stop or freeze the app):', min_value=0.0, value=0.5, step=0.01)
+
+
+
+
+    samples = format_sample(selected_groups)
 
     if st.button('Create Network'):
-        if len(selected_groups) == 1:
-            group = selected_groups[0]
+        if len(samples) == 1:
+            group = samples[0]
             file_path = os.path.join('data', 'Gene-Gene Expression Correlation', 'Correlation Higher Than 0.5', f'GeneGene_HighCorrelation_{group}_0.5.txt')
             if os.path.isfile(file_path):
+                # 다운로드용 데이터프레임
+                filtered_df = load_data(file_path, threshold)
+                filtered_df = filtered_df.rename(columns={'Gene': 'Gene1', 'Gene.1': 'Gene2'})
+
+                download_button(filtered_df)
                 show_legend()
                 show_network(file_path, threshold)
             else:
                 st.error(f"File for {group} does not exist.")
-        elif len(selected_groups) == 2:
-            show_group_legend(selected_groups)
-            show_combined_network(selected_groups, threshold)
-            show_df(selected_groups, threshold)
+        elif len(samples) == 2:
+            show_group_legend(samples)
+            show_combined_network(samples, threshold)
+            show_df(samples, threshold)
         else:
             st.error("Please select one or two groups.")
+
+def format_sample(sample_choice):
+    for key in range(len(sample_choice)):
+        start_idx = sample_choice[key].find("[")  # "["의 인덱스 찾기
+        end_idx = sample_choice[key].find("]")  # "]"의 인덱스 찾기
+        if start_idx != -1 and end_idx != -1:  # "["와 "]"가 모두 존재하는 경우
+            sample_choice[key] = sample_choice[key][:start_idx-1] + '_' + sample_choice[key][start_idx+1:end_idx]
+    return sample_choice
+
+# 데이터프레임 다운로드 함수
+def download_button(df):
+    csv = df.to_csv(index=False)
+    b64 = base64.b64encode(csv.encode()).decode()  # CSV를 base64로 변환
+    href = f'<a href="data:file/csv;base64,{b64}" download="data.csv"><button style="background-color: #FF4B4B; border: none; color: white; padding: 10px 12px; text-align: center; text-decoration: none; display: inline-block; font-size: 16px; margin: 4px 2px; cursor: pointer; border-radius: 12px;">Download CSV File</button></a>'
+    st.markdown(href, unsafe_allow_html=True)
