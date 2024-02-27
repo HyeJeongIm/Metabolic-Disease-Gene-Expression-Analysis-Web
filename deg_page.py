@@ -42,8 +42,10 @@ def create_search_area():
         
 def format_sample(sample_choice):
     for key in range(len(sample_choice)):
-        sample_choice[key] = sample_choice[key][:7] + sample_choice[key][9:11]
-
+        start_idx = sample_choice[key].find("[")  # "["의 인덱스 찾기
+        end_idx = sample_choice[key].find("]")  # "]"의 인덱스 찾기
+        if start_idx != -1 and end_idx != -1:  # "["와 "]"가 모두 존재하는 경우
+            sample_choice[key] = sample_choice[key][:start_idx-1] + sample_choice[key][start_idx+1:end_idx]
     return sample_choice
         
 
