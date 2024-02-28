@@ -39,8 +39,7 @@ def load_group_data(group_names, threshold):
         for idx, row in combined_df.iterrows():
             if frozenset([row['Gene'], row['Gene.1']]) in overlap:
                 combined_df.at[idx, 'color'] = group_colors['overlap']
-    
-    return combined_df
+    return combined_df    
 
 def show_legend():
     legend_html = """
@@ -132,7 +131,7 @@ def show_group_legend(group_names):
             Overlap (black)
         </div>
         <div style="margin-top: 10px;">
-            You can zoom in and out.
+            Use your mouse wheel to zoom in or zoom out.
         </div>
     </div>
     """
@@ -194,7 +193,7 @@ def write_co_page():
                     'Liver [LH]', 'Liver [OH]', 'Liver [OD]',
                     'Muscle [LH]', 'Muscle [OH]', 'Muscle [OD]']
     selected_groups = st.multiselect('Choose one or two groups', sample_class, key='sample_input', max_selections=2)
-    threshold = st.number_input('Enter threshold (Using threshold less than 0.9 can stop or freeze the app):', min_value=0.0, value=0.5, step=0.01)
+    threshold = st.number_input('Enter threshold of absolute correlation coefficient:', min_value=0.0, value=0.5, step=0.01)
 
 
 
@@ -216,6 +215,20 @@ def write_co_page():
             else:
                 st.error(f"File for {group} does not exist.")
         elif len(samples) == 2:
+            # 다운로드용 데이터프레임
+            pathes = []
+            for i in range(len(samples)):
+                sample_path = f'./data/Gene-Gene Expression Correlation/Correlation Higher Than 0.5/GeneGene_HighCorrelation_{samples[i]}_0.5.txt'
+                pathes.append(sample_path)
+            
+            df_sample0 = load_data(pathes[0], threshold)
+            df_sample1 = load_data(pathes[1], threshold)
+
+            merged_df = pd.merge(df_sample0, df_sample1, on=['Gene', 'Gene.1'], how='outer', suffixes=('_Group_A', '_Group_B'))
+            merged_df.fillna(0, inplace=True)
+            merged_df = merged_df.rename(columns={'Gene': 'Gene1', 'Gene.1': 'Gene2'})
+
+            download_button(merged_df)
             show_group_legend(samples)
             show_combined_network(samples, threshold)
             show_df(samples, threshold)
