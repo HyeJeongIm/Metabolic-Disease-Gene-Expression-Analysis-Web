@@ -217,23 +217,38 @@ def plot_heatmap(df, sample_choice):
     filtered_df = df[df['DEG Group'].isin(['Up-regulated', 'Down-regulated'])]
     filtered_df = filtered_df.rename(columns={'Gene' : 'Gene name'})
     filtered_df = filtered_df.sort_values(by='DEG Group', ascending=True)
+    filtered_df = filtered_df.drop(columns=['Log2FoldChange', 'FDR-adjusted p-value', 'DEG Group'])
 
     # 파일 경로 일반화
-    modified_path = sample_choice[0][:-2] + '_' + sample_choice[0][-2:]
-    file_path = f'./data/Gene Expression/Z_Score/GeneExpressionZ_{modified_path}.txt'
+    pathes = []
 
-    heatmap_data = pd.read_csv(file_path, sep='\t')
-    df_heatmap = pd.DataFrame(heatmap_data)
+    for i in range(len(sample_choice)):
+        modified_sample = sample_choice[i][:-2] + '_' + sample_choice[i][-2:]
+    
+        sample_path = f'./data/Gene Expression/Z_Score/GeneExpressionZ_{modified_sample}.txt'
+        pathes.append(sample_path)
+
+    sample0_data = pd.read_csv(pathes[0], sep='\t')
+    sample1_data = pd.read_csv(pathes[1], sep='\t')
+
+    df_smaple0 = pd.DataFrame(sample0_data)
+    df_smaple1 = pd.DataFrame(sample1_data)
+
+    # 이 부분은 나중에 혹시 그룹 클러스터링을 위해 남겨둠
+    # df_smaple0 = df_smaple0.add_suffix(f'_{sample_choice[0]}')
+    # df_smaple1 = df_smaple1.add_suffix(f'_{smaple_choice[1]}')
+
+    # df_smaple0 = df_smaple0.rename(columns={f'Gene name_{sample_choice[0]}' : 'Gene name'})
+    # df_smaple1 = df_smaple1.rename(columns={f'Gene name_{sample_choice[1]}' : 'Gene name'})
 
     # 히트맵 그릴 데이터프레임
-    merged_df = pd.merge(df_heatmap, filtered_df, on='Gene name', how='inner')
-    merged_df = merged_df.drop(columns=['Log2FoldChange', 'FDR-adjusted p-value'])
+    merged_df = pd.merge(filtered_df, df_smaple0, on='Gene name')
     # merged_df.set_index('Gene name', inplace=True)
-    merged_df = merged_df.sort_values(by='DEG Group', ascending=True)
+    final_df = pd.merge(merged_df, df_smaple1, on='Gene name')
 
-    numeric_cols = merged_df.select_dtypes(include=['number']).columns  # 숫자형 열만 선택
-    min_val = merged_df[numeric_cols].min().min()  # 숫자형 열의 최소값
-    max_val = merged_df[numeric_cols].max().max()  # 숫자형 열의 최대값
+    numeric_cols = final_df.select_dtypes(include=['number']).columns  # 숫자형 열만 선택
+    min_val = final_df[numeric_cols].min().min()  # 숫자형 열의 최소값
+    max_val = final_df[numeric_cols].max().max()  # 숫자형 열의 최대값
     mid_val = (min_val + max_val) / 2  # 최소값과 최대값의 중간값
 
     if min_val < 0 and max_val > 0:
@@ -249,9 +264,9 @@ def plot_heatmap(df, sample_choice):
 
     # 히트맵 그리기
     fig = go.Figure(data=go.Heatmap(
-        z=merged_df.drop(columns=['Gene name']).values,
-        x=merged_df.columns[1:],
-        y=merged_df['Gene name'],
+        z=final_df.drop(columns=['Gene name']).values,
+        x=final_df.columns[1:],
+        y=final_df['Gene name'],
         colorscale=colorscale
     ))
 
