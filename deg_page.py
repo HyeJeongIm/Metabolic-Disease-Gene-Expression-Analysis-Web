@@ -209,75 +209,90 @@ def color_rows(row):
         return ['background-color: #9cd3d3'] * len(row)
     else:
         return [''] * len(row)
-    
+import pandas as pd
+import plotly.graph_objects as go
+import plotly.express as px
+import streamlit as st
+
+import pandas as pd
+import plotly.graph_objects as go
+import plotly.express as px
+import streamlit as st
+
 def plot_heatmap(df, sample_choice):
     st.subheader('Heatmap')
 
     # 데이터프레임 전처리
     filtered_df = df[df['DEG Group'].isin(['Up-regulated', 'Down-regulated'])]
-    filtered_df = filtered_df.rename(columns={'Gene' : 'Gene name'})
+    filtered_df = filtered_df.rename(columns={'Gene': 'Gene name'})
     filtered_df = filtered_df.sort_values(by='DEG Group', ascending=True)
     filtered_df = filtered_df.drop(columns=['Log2FoldChange', 'FDR-adjusted p-value', 'DEG Group'])
 
-    # 파일 경로 일반화
+    # 파일 경로와 그룹 정보 초기화
     pathes = []
+    group_info = {}
 
-    for i in range(len(sample_choice)):
+    for i, choice in enumerate(sample_choice):
         modified_sample = sample_choice[i][:-2] + '_' + sample_choice[i][-2:]
-    
         sample_path = f'./data/Gene Expression/Z_Score/GeneExpressionZ_{modified_sample}.txt'
         pathes.append(sample_path)
+        data = pd.read_csv(sample_path, sep='\t')
+        for col in data.columns:
+            if col != 'Gene name':
+                # 올바른 그룹 키 할당 확인
+                group_key = f'Group{i+1}'
+                group_info[col] = group_key
 
-    sample0_data = pd.read_csv(pathes[0], sep='\t')
-    sample1_data = pd.read_csv(pathes[1], sep='\t')
+    # 모든 샘플 데이터를 병합
+    final_df = filtered_df
+    for path in pathes:
+        sample_data = pd.read_csv(path, sep='\t')
+        final_df = pd.merge(final_df, sample_data, on='Gene name', how='left')
 
-    df_smaple0 = pd.DataFrame(sample0_data)
-    df_smaple1 = pd.DataFrame(sample1_data)
-
-    # 이 부분은 나중에 혹시 그룹 클러스터링을 위해 남겨둠
-    # df_smaple0 = df_smaple0.add_suffix(f'_{sample_choice[0]}')
-    # df_smaple1 = df_smaple1.add_suffix(f'_{smaple_choice[1]}')
-
-    # df_smaple0 = df_smaple0.rename(columns={f'Gene name_{sample_choice[0]}' : 'Gene name'})
-    # df_smaple1 = df_smaple1.rename(columns={f'Gene name_{sample_choice[1]}' : 'Gene name'})
-
-    # 히트맵 그릴 데이터프레임
-    merged_df = pd.merge(filtered_df, df_smaple0, on='Gene name')
-    # merged_df.set_index('Gene name', inplace=True)
-    final_df = pd.merge(merged_df, df_smaple1, on='Gene name')
-
-    numeric_cols = final_df.select_dtypes(include=['number']).columns  # 숫자형 열만 선택
-    min_val = final_df[numeric_cols].min().min()  # 숫자형 열의 최소값
-    max_val = final_df[numeric_cols].max().max()  # 숫자형 열의 최대값
-    mid_val = (min_val + max_val) / 2  # 최소값과 최대값의 중간값
-
-    if min_val < 0 and max_val > 0:
-        mid_val = 0  # 최소값이 음수이고 최대값이 양수인 경우 0을 기준으로 설정
-    else:
-        mid_val = (min_val + max_val) / 2  # 그 외에는 최소값과 최대값의 중간값 사용
-
-    colorscale = [
-            [0, "blue"],
-            [((mid_val - min_val) / (max_val - min_val)), "white"],
-            [1, "red"]
-        ]
+    numeric_cols = final_df.select_dtypes(include=['number']).columns
 
     # 히트맵 그리기
     fig = go.Figure(data=go.Heatmap(
-        z=final_df.drop(columns=['Gene name']).values,
-        x=final_df.columns[1:],
+        z=final_df[numeric_cols].values,
+        x=numeric_cols,
         y=final_df['Gene name'],
-        colorscale=colorscale
+        colorscale='Blues'
     ))
+
+    # 그룹 라벨을 그리기 위한 함수
+    def add_group_labels(fig, group_info):
+        # 그룹별 색상 지정
+        colors = px.colors.qualitative.Pastel
+        # 중복 없는 그룹 리스트를 생성
+        unique_groups = list(set(group_info.values()))
+        group_colors = {group: colors[i % len(colors)] for i, group in enumerate(unique_groups)}
+
+        # 그룹별로 샘플 위치에 점 찍기
+        for sample, group in group_info.items():
+            fig.add_trace(go.Scatter(
+                x=[sample],
+                y=[1.01],  # y축 위에 위치
+                text=group,
+                mode='markers',
+                marker=dict(color=group_colors[group], size=10),
+                showlegend=False
+            ))
+
+    # 그룹 라벨 추가
+    add_group_labels(fig, group_info)
 
     # 레이아웃 설정
     fig.update_layout(
-        xaxis_title='Samples',
+        xaxis=dict(tickangle=-90),  # x축 라벨 각도 조정
         yaxis_title='Gene name',
-        height=700,
-        width=700
+        height=900,  # 높이 조정
+        width=1000,  # 너비 조정
+        margin=dict(t=100)  # 상단 여백 조정
     )
+
     st.plotly_chart(fig)
+
+# create_search_area 함수는 생략됨
 
 
 def plot_pathway(group1, group2, p_value, fold_change, categories):
