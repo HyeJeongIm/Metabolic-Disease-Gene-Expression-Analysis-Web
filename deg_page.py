@@ -209,15 +209,6 @@ def color_rows(row):
         return ['background-color: #9cd3d3'] * len(row)
     else:
         return [''] * len(row)
-import pandas as pd
-import plotly.graph_objects as go
-import plotly.express as px
-import streamlit as st
-
-import pandas as pd
-import plotly.graph_objects as go
-import plotly.express as px
-import streamlit as st
 
 def plot_heatmap(df, sample_choice):
     st.subheader('Heatmap')
@@ -236,7 +227,7 @@ def plot_heatmap(df, sample_choice):
     
         sample_path = f'./data/Gene Expression/Z_Score/GeneExpressionZ_{modified_sample}.txt'
         pathes.append(sample_path)
- sample0_data = pd.read_csv(pathes[0], sep='\t')
+    sample0_data = pd.read_csv(pathes[0], sep='\t')
     sample1_data = pd.read_csv(pathes[1], sep='\t')
 
     df_smaple0 = pd.DataFrame(sample0_data)
@@ -304,7 +295,6 @@ def plot_heatmap(df, sample_choice):
     fig.update_layout(layout)
 
     st.plotly_chart(fig)
-
 
 def plot_pathway(group1, group2, p_value, fold_change, categories):
     base_path = "data/DEG Pathway Enrichment Result/"
