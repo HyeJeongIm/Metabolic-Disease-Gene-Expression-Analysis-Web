@@ -227,72 +227,83 @@ def plot_heatmap(df, sample_choice):
     filtered_df = filtered_df.rename(columns={'Gene': 'Gene name'})
     filtered_df = filtered_df.sort_values(by='DEG Group', ascending=True)
     filtered_df = filtered_df.drop(columns=['Log2FoldChange', 'FDR-adjusted p-value', 'DEG Group'])
-
-    # 파일 경로와 그룹 정보 초기화
+  
+  # 파일 경로 일반화
     pathes = []
-    group_info = {}
 
-    for i, choice in enumerate(sample_choice):
+    for i in range(len(sample_choice)):
         modified_sample = sample_choice[i][:-2] + '_' + sample_choice[i][-2:]
+    
         sample_path = f'./data/Gene Expression/Z_Score/GeneExpressionZ_{modified_sample}.txt'
         pathes.append(sample_path)
-        data = pd.read_csv(sample_path, sep='\t')
-        for col in data.columns:
-            if col != 'Gene name':
-                # 올바른 그룹 키 할당 확인
-                group_key = f'Group{i+1}'
-                group_info[col] = group_key
+ sample0_data = pd.read_csv(pathes[0], sep='\t')
+    sample1_data = pd.read_csv(pathes[1], sep='\t')
 
-    # 모든 샘플 데이터를 병합
-    final_df = filtered_df
-    for path in pathes:
-        sample_data = pd.read_csv(path, sep='\t')
-        final_df = pd.merge(final_df, sample_data, on='Gene name', how='left')
+    df_smaple0 = pd.DataFrame(sample0_data)
+    df_smaple1 = pd.DataFrame(sample1_data)
 
-    numeric_cols = final_df.select_dtypes(include=['number']).columns
+    # 이 부분은 나중에 혹시 그룹 클러스터링을 위해 남겨둠
+    # df_smaple0 = df_smaple0.add_suffix(f'_{sample_choice[0]}')
+    # df_smaple1 = df_smaple1.add_suffix(f'_{sample_choice[1]}')
+
+    df_smaple0 = df_smaple0.rename(columns={f'Gene name_{sample_choice[0]}' : 'Gene name'})
+    df_smaple1 = df_smaple1.rename(columns={f'Gene name_{sample_choice[1]}' : 'Gene name'})
+
+    # 히트맵 그릴 데이터프레임
+    merged_df = pd.merge(filtered_df, df_smaple0, on='Gene name')
+    # merged_df.set_index('Gene name', inplace=True)
+    final_df = pd.merge(merged_df, df_smaple1, on='Gene name')
+
+    colorscale = [
+            [0, "blue"],
+            [1/6, "blue"],
+            [1/2, "white"],
+            [5/6, "red"],
+            [1, "red"]
+        ]
+    
+    color = ['green', 'orange']
 
     # 히트맵 그리기
-    fig = go.Figure(data=go.Heatmap(
-        z=final_df[numeric_cols].values,
-        x=numeric_cols,
+    heatmap_trace = go.Heatmap(
+        z=final_df.drop(columns=['Gene name']).values,
+        x=final_df.columns[1:],
         y=final_df['Gene name'],
-        colorscale='Blues'
-    ))
-
-    # 그룹 라벨을 그리기 위한 함수
-    def add_group_labels(fig, group_info):
-        # 그룹별 색상 지정
-        colors = px.colors.qualitative.Pastel
-        # 중복 없는 그룹 리스트를 생성
-        unique_groups = list(set(group_info.values()))
-        group_colors = {group: colors[i % len(colors)] for i, group in enumerate(unique_groups)}
-
-        # 그룹별로 샘플 위치에 점 찍기
-        for sample, group in group_info.items():
-            fig.add_trace(go.Scatter(
-                x=[sample],
-                y=[1.01],  # y축 위에 위치
-                text=group,
-                mode='markers',
-                marker=dict(color=group_colors[group], size=10),
-                showlegend=False
-            ))
-
-    # 그룹 라벨 추가
-    add_group_labels(fig, group_info)
-
-    # 레이아웃 설정
-    fig.update_layout(
-        xaxis=dict(tickangle=-90),  # x축 라벨 각도 조정
-        yaxis_title='Gene name',
-        height=900,  # 높이 조정
-        width=1000,  # 너비 조정
-        margin=dict(t=100)  # 상단 여백 조정
+        colorscale=colorscale,
+        zmin=-3,
+        zmax=3
     )
 
-    st.plotly_chart(fig)
+    # 각 열에 대해 scatter plot 생성 후, 그룹에 따라 색상 지정
+    scatter_traces = []
 
-# create_search_area 함수는 생략됨
+    for i, column in enumerate(final_df.columns[1:]):  # 첫 번째 열은 제외
+        if i < len(df_smaple0.columns[1:]):
+            color_index = 0  # 첫 번째 색상 사용
+        else:  
+            color_index = 1  # 두 번째 색상 사용
+        # 각 열에 대해 고정된 y값을 사용하고, x축 값은 열의 인덱스로 지정하여 오른쪽으로 이동시킴
+        scatter_trace = go.Scatter(
+            x=[column], 
+            y=[0], 
+            mode='markers', 
+            marker=dict(color=color[color_index]),
+            name=column, 
+            showlegend=False)
+        scatter_traces.append(scatter_trace)
+
+    fig = go.Figure(data=[heatmap_trace, *scatter_traces])
+
+    layout = go.Layout(
+        # margin 및 padding 조정
+        margin=dict(t=50, b=50),
+        xaxis_title='Samples',
+        yaxis_title='Gene name',
+    )
+
+    fig.update_layout(layout)
+
+    st.plotly_chart(fig)
 
 
 def plot_pathway(group1, group2, p_value, fold_change, categories):
