@@ -236,47 +236,65 @@ def plot_heatmap(df, sample_choice):
 
     # 이 부분은 나중에 혹시 그룹 클러스터링을 위해 남겨둠
     # df_smaple0 = df_smaple0.add_suffix(f'_{sample_choice[0]}')
-    # df_smaple1 = df_smaple1.add_suffix(f'_{smaple_choice[1]}')
+    # df_smaple1 = df_smaple1.add_suffix(f'_{sample_choice[1]}')
 
-    # df_smaple0 = df_smaple0.rename(columns={f'Gene name_{sample_choice[0]}' : 'Gene name'})
-    # df_smaple1 = df_smaple1.rename(columns={f'Gene name_{sample_choice[1]}' : 'Gene name'})
+    df_smaple0 = df_smaple0.rename(columns={f'Gene name_{sample_choice[0]}' : 'Gene name'})
+    df_smaple1 = df_smaple1.rename(columns={f'Gene name_{sample_choice[1]}' : 'Gene name'})
 
     # 히트맵 그릴 데이터프레임
     merged_df = pd.merge(filtered_df, df_smaple0, on='Gene name')
     # merged_df.set_index('Gene name', inplace=True)
     final_df = pd.merge(merged_df, df_smaple1, on='Gene name')
 
-    numeric_cols = final_df.select_dtypes(include=['number']).columns  # 숫자형 열만 선택
-    min_val = final_df[numeric_cols].min().min()  # 숫자형 열의 최소값
-    max_val = final_df[numeric_cols].max().max()  # 숫자형 열의 최대값
-    mid_val = (min_val + max_val) / 2  # 최소값과 최대값의 중간값
-
-    if min_val < 0 and max_val > 0:
-        mid_val = 0  # 최소값이 음수이고 최대값이 양수인 경우 0을 기준으로 설정
-    else:
-        mid_val = (min_val + max_val) / 2  # 그 외에는 최소값과 최대값의 중간값 사용
-
     colorscale = [
             [0, "blue"],
-            [((mid_val - min_val) / (max_val - min_val)), "white"],
+            [1/6, "blue"],
+            [1/2, "white"],
+            [5/6, "red"],
             [1, "red"]
         ]
+    
+    color = ['green', 'orange']
 
     # 히트맵 그리기
-    fig = go.Figure(data=go.Heatmap(
+    heatmap_trace = go.Heatmap(
         z=final_df.drop(columns=['Gene name']).values,
         x=final_df.columns[1:],
         y=final_df['Gene name'],
-        colorscale=colorscale
-    ))
+        colorscale=colorscale,
+        zmin=-3,
+        zmax=3
+    )
 
-    # 레이아웃 설정
-    fig.update_layout(
+    # 각 열에 대해 scatter plot 생성 후, 그룹에 따라 색상 지정
+    scatter_traces = []
+
+    for i, column in enumerate(final_df.columns[1:]):  # 첫 번째 열은 제외
+        if i < len(df_smaple0.columns[1:]):
+            color_index = 0  # 첫 번째 색상 사용
+        else:  
+            color_index = 1  # 두 번째 색상 사용
+        # 각 열에 대해 고정된 y값을 사용하고, x축 값은 열의 인덱스로 지정하여 오른쪽으로 이동시킴
+        scatter_trace = go.Scatter(
+            x=[column], 
+            y=[0], 
+            mode='markers', 
+            marker=dict(color=color[color_index]),
+            name=column, 
+            showlegend=False)
+        scatter_traces.append(scatter_trace)
+
+    fig = go.Figure(data=[heatmap_trace, *scatter_traces])
+
+    layout = go.Layout(
+        # margin 및 padding 조정
+        margin=dict(t=50, b=50),
         xaxis_title='Samples',
         yaxis_title='Gene name',
-        height=700,
-        width=700
     )
+
+    fig.update_layout(layout)
+
     st.plotly_chart(fig)
 
 
