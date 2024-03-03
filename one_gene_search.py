@@ -140,8 +140,7 @@ def load_network_data(gene_name):
     return interactions 
      
 def plot_initial_pyvis(df, gene_name):
-    st.subheader("Network")
-    st.subheader(f"**[ Non interaction around '{gene_name}'** ]")
+    st.subheader(f"**[ Protein interaction around '{gene_name}'** ]")
 
     net = Network(notebook=True, directed=False)
     seen_nodes = set()
@@ -161,16 +160,10 @@ def plot_initial_pyvis(df, gene_name):
 
         net.add_edge(src, dst, color='lightgrey')
 
-    # 레이아웃 옵션 선택
-    layout_option = st.selectbox('Initial Layout Options', ['Hide', 'Show'], key='initial_layout')
-
-    if layout_option == 'Show':
-        net.show_buttons(filter_=['physics'])
-
     net.show("initial_pyvis_net_graph.html")
     HtmlFile = open("initial_pyvis_net_graph.html", 'r', encoding='utf-8')
     source_code = HtmlFile.read() 
-    st.components.v1.html(source_code, width=670, height=1100)
+    st.components.v1.html(source_code, width=670, height=610)
     
 # 데이터 로드 및 필터링 함수
 @st.cache_data
