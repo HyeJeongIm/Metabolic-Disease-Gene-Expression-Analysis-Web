@@ -218,8 +218,8 @@ def plot_heatmap(df, sample_choice):
     filtered_df = filtered_df.rename(columns={'Gene': 'Gene name'})
     filtered_df = filtered_df.sort_values(by='DEG Group', ascending=True)
     filtered_df = filtered_df.drop(columns=['Log2FoldChange', 'FDR-adjusted p-value', 'DEG Group'])
-  
-  # 파일 경로 일반화
+
+    # 파일 경로 일반화
     pathes = []
 
     for i in range(len(sample_choice)):
@@ -255,6 +255,13 @@ def plot_heatmap(df, sample_choice):
     
     color = ['green', 'orange']
 
+    gene_height = 250
+    max_genes_display = 40  # 최대로 표시할 유전자 수
+    if len(final_df) > max_genes_display:
+        heatmap_height = max_genes_display * gene_height
+    else:
+        heatmap_height = len(final_df) * gene_height
+
     # 히트맵 그리기
     heatmap_trace = go.Heatmap(
         z=final_df.drop(columns=['Gene name']).values,
@@ -276,22 +283,40 @@ def plot_heatmap(df, sample_choice):
         # 각 열에 대해 고정된 y값을 사용하고, x축 값은 열의 인덱스로 지정하여 오른쪽으로 이동시킴
         scatter_trace = go.Scatter(
             x=[column], 
-            y=[0], 
+            y=['Sample Group'], 
             mode='markers', 
             marker=dict(color=color[color_index]),
             name=column, 
-            showlegend=False)
+            showlegend=False,
+            )
         scatter_traces.append(scatter_trace)
 
     fig = go.Figure(data=[heatmap_trace, *scatter_traces])
 
     layout = go.Layout(
-        # margin 및 padding 조정
-        margin=dict(t=50, b=50),
-        xaxis_title='Samples',
+        width=800,
+        height=min(heatmap_height, 600),
         yaxis_title='Gene name',
     )
 
+
+    if len(final_df) > max_genes_display:
+        # x축 타이틀 설정
+        fig.add_annotation(
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=-0.1,
+            text="Samples",
+            showarrow=False,
+            font=dict(
+                size=15,
+            )
+        )
+
+        fig.update_yaxes(showticklabels=False)
+
+    fig.update_xaxes(showticklabels=False)
     fig.update_layout(layout)
 
     st.plotly_chart(fig)
