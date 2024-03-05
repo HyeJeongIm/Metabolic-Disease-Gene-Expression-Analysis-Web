@@ -255,8 +255,8 @@ def plot_heatmap(df, sample_choice):
     
     color = ['green', 'orange']
 
-    gene_height = 250
-    max_genes_display = 40  # 최대로 표시할 유전자 수
+    gene_height = 50
+    max_genes_display = 20  # 최대로 표시할 유전자 수
     if len(final_df) > max_genes_display:
         heatmap_height = max_genes_display * gene_height
     else:
@@ -295,7 +295,7 @@ def plot_heatmap(df, sample_choice):
 
     layout = go.Layout(
         width=800,
-        height=min(heatmap_height, 600),
+        height=max(heatmap_height, 250),
         yaxis_title='Gene name',
         xaxis=dict(visible=False),
     )
@@ -315,18 +315,6 @@ def plot_heatmap(df, sample_choice):
 
 
     if len(final_df) > max_genes_display:
-        # x축 타이틀 설정
-        # fig.add_annotation(
-        #     xref="paper",
-        #     yref="paper",
-        #     x=0.5,
-        #     y=-0.1,
-        #     text="Samples",
-        #     showarrow=False,
-        #     font=dict(
-        #         size=15,
-        #     )
-        # )
         layout.update(yaxis=dict(visible=False))
         fig.update_yaxes(showticklabels=False)
 
