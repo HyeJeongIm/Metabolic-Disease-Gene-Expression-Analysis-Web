@@ -283,7 +283,7 @@ def plot_heatmap(df, sample_choice):
         # 각 열에 대해 고정된 y값을 사용하고, x축 값은 열의 인덱스로 지정하여 오른쪽으로 이동시킴
         scatter_trace = go.Scatter(
             x=[column], 
-            y=['Sample Group'], 
+            y=['Group'], 
             mode='markers', 
             marker=dict(color=color[color_index]),
             name=column, 
@@ -297,23 +297,37 @@ def plot_heatmap(df, sample_choice):
         width=800,
         height=min(heatmap_height, 600),
         yaxis_title='Gene name',
+        xaxis=dict(visible=False),
     )
+
+     # x축 타이틀 설정
+    # fig.add_annotation(
+    #     xref="paper",
+    #     yref="paper",
+    #     x=0.5,
+    #     y=-0.1,
+    #     text="Samples",
+    #     showarrow=False,
+    #     font=dict(
+    #         size=15,
+    #     )
+    # )
 
 
     if len(final_df) > max_genes_display:
         # x축 타이틀 설정
-        fig.add_annotation(
-            xref="paper",
-            yref="paper",
-            x=0.5,
-            y=-0.1,
-            text="Samples",
-            showarrow=False,
-            font=dict(
-                size=15,
-            )
-        )
-
+        # fig.add_annotation(
+        #     xref="paper",
+        #     yref="paper",
+        #     x=0.5,
+        #     y=-0.1,
+        #     text="Samples",
+        #     showarrow=False,
+        #     font=dict(
+        #         size=15,
+        #     )
+        # )
+        layout.update(yaxis=dict(visible=False))
         fig.update_yaxes(showticklabels=False)
 
     fig.update_xaxes(showticklabels=False)

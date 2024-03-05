@@ -8,12 +8,12 @@ import streamlit.components.v1 as components
 def create_header():
     st.title('Co-Expression Network Analysis')
 
-@st.cache_data
+@st.cache_data(show_spinner=False)
 def load_data(file_path, threshold):
     df = pd.read_csv(file_path, sep='\t')
     return df[df['Correlation coefficient'].abs() >= threshold]
 
-@st.cache_data
+@st.cache_data(show_spinner=False)
 def load_group_data(group_names, threshold):
     combined_df = pd.DataFrame()
     # 각 그룹별로 색상 지정
