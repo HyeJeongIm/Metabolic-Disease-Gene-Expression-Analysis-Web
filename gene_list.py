@@ -101,6 +101,7 @@ def show_heatmap(genes_list, base_path):
                 )
 
                 if col == 1 and show_gene_labels:
+                    
                     fig.update_yaxes(row=row, col=col)
                 else:
                     fig.update_yaxes(showticklabels=False, row=row, col=col)

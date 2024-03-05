@@ -46,14 +46,14 @@ import os
     Box Plot
 '''
 
-@st.cache_data
+@st.cache_data(show_spinner=False)
 def load_data(file_path, name):
     df = pd.read_csv(file_path, sep='\t')
     one_gene_df = df[df['Gene name'] == name].drop('Gene name', axis=1).T
     one_gene_df.columns = [name]
     return one_gene_df
 
-@st.cache_data
+@st.cache_data(show_spinner=False)
 def custom_sort_key(file_name):
     """
     파일 이름을 기반으로 정렬하기 위한 사용자 정의 키 함수.
@@ -318,7 +318,7 @@ def show_box_plot(name, z_score=False):
 '''
     v3 최종 test
 '''
-@st.cache_data
+@st.cache_data(show_spinner=False)
 def load_network_data(gene_name):
     file_path = 'data\Gene-Gene Interaction\BIOGRID-ORGANISM-Homo_sapiens-4.4.229.tab3.txt'
     df = pd.read_csv(file_path, sep='\t')
@@ -326,7 +326,7 @@ def load_network_data(gene_name):
                     (df['Official Symbol Interactor B'] == gene_name))][['Official Symbol Interactor A', 'Official Symbol Interactor B']]
     return interactions 
 
-@st.cache_data
+@st.cache_data(show_spinner=False)
 def load_correlation_data(group, threshold):
     file_path = f'data/Gene-Gene Expression Correlation/Correlation Higher Than 0.5/GeneGene_HighCorrelation_{group}_0.5.txt'
     df_correlation = pd.read_csv(file_path, sep='\t')
