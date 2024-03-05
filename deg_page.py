@@ -2,10 +2,9 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-import matplotlib.pyplot as plt
-import seaborn as sns
 import os
 import numpy as np
+import streamlit.components.v1 as components
 
 def create_header():
     st.title('DEG Analysis')
@@ -209,9 +208,33 @@ def color_rows(row):
         return ['background-color: #9cd3d3'] * len(row)
     else:
         return [''] * len(row)
+    
+def show_legend(sample_choice):
+    group =[]
+    for i in range(len(sample_choice)):
+        group.append(sample_choice[i][:-2] + ' [' + sample_choice[i][-2:] + ']')
+
+    legend_html = f"""
+    <div style="position: fixed; top: 55px; right: 10px; background-color: white; padding: 10px; border-radius: 10px; border: 1px solid #e1e4e8;">
+        <div style="display: inline-block; margin-right: 20px;">
+            <svg width="40" height="10">
+                <circle cx="25" cy="5" r="5" style="fill:green" />
+            </svg>
+            {group[0]}
+        </div>
+        <div style="display: inline-block;">
+            <svg width="40" height="10">
+                <circle cx="25" cy="5" r="5" style="fill:orange" />
+            </svg>
+            {group[1]}
+        </div>
+    </div>
+    """
+    components.html(legend_html, height=100)
 
 def plot_heatmap(df, sample_choice):
     st.subheader('Heatmap')
+    show_legend(sample_choice)
 
     # 데이터프레임 전처리
     filtered_df = df[df['DEG Group'].isin(['Up-regulated', 'Down-regulated'])]
@@ -298,9 +321,12 @@ def plot_heatmap(df, sample_choice):
         height=max(heatmap_height, 250),
         yaxis_title='Gene name',
         xaxis=dict(visible=False),
+        margin=dict(
+            t=50,
+        )
     )
 
-     # x축 타이틀 설정
+    # x축 타이틀 설정
     # fig.add_annotation(
     #     xref="paper",
     #     yref="paper",
