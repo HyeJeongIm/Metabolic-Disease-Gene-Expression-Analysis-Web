@@ -2,10 +2,16 @@ import streamlit as st
 from streamlit_option_menu import option_menu
 import main_page, gene_search_page, gene_list_page, deg_page, co_page
 
+st.set_page_config(
+    page_title="Metabolic Disease",
+    page_icon="./images/favicon.ico",
+    layout="centered"
+)
+
 def create_layout():
     with st.sidebar:
-        page = option_menu("Menu", ["Main", "Gene Search" , "Gene List Search", "DEG Analysis", "Co-expression", 'Analysis'],
-                            icons=['house', 'list-columns', 'clipboard-data', 'bar-chart'],
+        page = option_menu("Menu", ["Main", "Gene Search" , "Gene List Search", "DEG Analysis", "Co-expression", 'Reference'],
+                            icons=['house', 'list-columns', 'clipboard-data', 'bar-chart', 'arrow-repeat', 'clipboard'],
                             menu_icon="app-indicator", default_index=0,
                             styles={
             "container": {"padding": "4!important", "background-color": "#fafafa"},
@@ -25,7 +31,7 @@ def create_layout():
         deg_page.write_deg_page()
     elif page == 'Co-expression':
         co_page.write_co_page()
-    elif page == 'Analysis':
+    elif page == 'Reference':
         pass
 
 def main():
@@ -33,5 +39,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
-    
