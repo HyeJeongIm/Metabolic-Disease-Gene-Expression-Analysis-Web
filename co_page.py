@@ -6,7 +6,7 @@ from pyvis.network import Network
 import streamlit.components.v1 as components
 
 def create_header():
-    st.title('Co-Expression Network Analysis')
+    st.title('Co-expression Network Analysis')
 
 @st.cache_data(show_spinner=False)
 def load_data(file_path, threshold):
@@ -198,6 +198,8 @@ def write_co_page():
     samples = format_sample(selected_groups)
 
     if st.button('Create Network'):
+        st.subheader("Network")
+
         if len(samples) == 1:
             group = samples[0]
             file_path = os.path.join('data', 'Gene-Gene Expression Correlation', 'Correlation Higher Than 0.5', f'GeneGene_HighCorrelation_{group}_0.5.txt')
@@ -206,9 +208,9 @@ def write_co_page():
                 filtered_df = load_data(file_path, threshold)
                 filtered_df = filtered_df.rename(columns={'Gene': 'Gene1', 'Gene.1': 'Gene2'})
 
-                download_button(filtered_df)
                 show_legend()
                 show_network(file_path, threshold)
+                download_button(filtered_df)
             else:
                 st.error(f"File for {group} does not exist.")
         elif len(samples) == 2:
@@ -225,10 +227,11 @@ def write_co_page():
             merged_df.fillna(0, inplace=True)
             merged_df = merged_df.rename(columns={'Gene': 'Gene1', 'Gene.1': 'Gene2'})
 
-            download_button(merged_df)
             show_group_legend(samples)
             show_combined_network(samples, threshold)
+            download_button(merged_df)
             show_df(samples, threshold)
+            
         else:
             st.error("Please select one or two groups.")
 
@@ -244,5 +247,5 @@ def format_sample(sample_choice):
 def download_button(df):
     csv = df.to_csv(index=False)
     b64 = base64.b64encode(csv.encode()).decode()  # CSV를 base64로 변환
-    href = f'<a href="data:file/csv;base64,{b64}" download="data.csv"><button style="background-color: #FF4B4B; border: none; color: white; padding: 10px 12px; text-align: center; text-decoration: none; display: inline-block; font-size: 16px; margin: 4px 2px; cursor: pointer; border-radius: 12px;">Download CSV File</button></a>'
+    href = f'<a href="data:file/csv;base64,{b64}" download="data.csv" style="float: right; position: relative; top: -50px;"><button style="background-color: #FF4B4B; border: none; color: white; padding: 10px 12px; text-align: center; text-decoration: none; display: inline-block; font-size: 16px; margin: 4px 2px; cursor: pointer; border-radius: 12px;">Download CSV File</button></a>'
     st.markdown(href, unsafe_allow_html=True)
