@@ -127,16 +127,12 @@ def show_heatmap(genes_list, base_path):
 '''
     network
 '''
+@st.cache_data(show_spinner=False)
 def load_correlation_data(group, threshold):
     file_path = f'data/Gene-Gene Expression Correlation/Correlation Higher Than 0.5/GeneGene_HighCorrelation_{group}_0.5.txt'
     df_correlation = pd.read_csv(file_path, sep='\t')
     df_correlation_filtered = df_correlation[df_correlation['Correlation coefficient'].abs() >= threshold]
     return df_correlation_filtered
-
-def show_interaction(gene_list):
-    with st.spinner('Drawing a graph'):
-        folder_path = './data/Gene-Gene Interaction/BIOGRID-ORGANISM-Homo_sapiens-4.4.229.tab3.txt'
-        data = pd.read_csv(folder_path, sep='\t')
         
 def show_legend():
     legend_html = """
@@ -153,12 +149,15 @@ def show_legend():
             </svg>
             Negative correlation
         </div>
+         <div style="margin-top: 10px;">
+            Use your mouse wheel to zoom in or zoom out.
+        </div>
     </div>
     """
-    components.html(legend_html, height=55)   
+    components.html(legend_html, height=100) 
 
 def plot_initial_pyvis(df_interactions, genes_list):
-    with st.spinner('Drawing a graph'):
+    with st.spinner('It make take few minutes'):
         # NetworkX 그래프 생성
         net = Network(
             notebook=True,
@@ -182,10 +181,10 @@ def plot_initial_pyvis(df_interactions, genes_list):
         # html 파일 페이지에 나타내기
         HtmlFile = open('pyvis_net_graph.html', 'r', encoding='utf-8')
         source_code = HtmlFile.read() 
-        components.html(source_code, width=670, height=1070)
+        st.components.v1.html(source_code, width=670, height=610)
         
 def plot_colored_network(df_interactions, df_correlation_filtered, genes_list):
-    with st.spinner('Drawing a graph'):
+    with st.spinner('It make take few minutes'):
         net = Network(notebook=True, directed=False)
         
         for gene_pair in combinations(genes_list, 2):
@@ -209,28 +208,38 @@ def plot_colored_network(df_interactions, df_correlation_filtered, genes_list):
 
         HtmlFile = open('pyvis_net_graph.html', 'r', encoding='utf-8')
         source_code = HtmlFile.read() 
-        components.html(source_code, width=670, height=1070)     
-
+        st.components.v1.html(source_code, width=670, height=610)
+        
 def show_network_diagram(genes_list):
     folder_path = './data/Gene-Gene Interaction/BIOGRID-ORGANISM-Homo_sapiens-4.4.229.tab3.txt'
     data = pd.read_csv(folder_path, sep='\t')
 
     df_interactions = pd.DataFrame(data)
     
+    st.subheader(f"**Network interactions between input Genes**")
+
     # threshold 및 group 선택
     sample_class = ['Adipose [LH]', 'Adipose [OH]', 'Adipose [OD]',
                     'Liver [LH]', 'Liver [OH]', 'Liver [OD]',
                     'Muscle [LH]', 'Muscle [OH]', 'Muscle [OD]']
     group = st.selectbox('Choose one group', sample_class, key='sample_input')
-    threshold = st.number_input('Enter threshold:', min_value=0.0, value=0.5, step=0.01)
+
+    threshold = st.number_input('Enter threshold of absolute correlation coefficient', min_value=0.0, value=0.5, step=0.01)
     # 데이터를 찾기 위해서 그룹명 포매팅
     formatted_group = group_format(group)
-
+    
     # group 및 threshold를 선택하면 그려짐
-    if st.button('Create Gene List Correlation Network'):
+    if st.button('Create Correlation Network'):
         df_correlation = load_correlation_data(formatted_group, threshold)
         show_legend()
         plot_colored_network(df_interactions, df_correlation, genes_list)
     else: 
         plot_initial_pyvis(df_interactions, genes_list)
     
+def group_format(sample_class):
+    start_idx = sample_class.find("[")  # "["의 인덱스 찾기
+    end_idx = sample_class.find("]")  # "]"의 인덱스 찾기
+    if start_idx != -1 and end_idx != -1:  # "["와 "]"가 모두 존재하는 경우
+        sample_class = sample_class[:start_idx-1] + '_' + sample_class[start_idx+1:end_idx]
+
+    return sample_class
