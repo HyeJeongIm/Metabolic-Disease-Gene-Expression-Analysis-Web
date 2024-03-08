@@ -277,7 +277,7 @@ def show_network_diagram(gene_name):
     
     df_interactions = load_network_data(gene_name)
     
-    st.subheader(f"**[ Protein interaction around '{gene_name}'** ]")
+    st.subheader(f"**Protein interaction around '{gene_name}'**")
 
     # threshold 및 group 선택
     sample_class = ['Adipose [LH]', 'Adipose [OH]', 'Adipose [OD]',
