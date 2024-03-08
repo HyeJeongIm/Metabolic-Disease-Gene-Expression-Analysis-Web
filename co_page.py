@@ -240,7 +240,6 @@ def write_co_page():
                 show_group_legend(samples)
                 show_combined_network(samples, threshold)
                 show_df(samples, threshold)
-
         else:
             st.error("Please select one or two groups.")
 
