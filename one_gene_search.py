@@ -283,19 +283,22 @@ def show_network_diagram(gene_name):
     sample_class = ['Adipose [LH]', 'Adipose [OH]', 'Adipose [OD]',
                     'Liver [LH]', 'Liver [OH]', 'Liver [OD]',
                     'Muscle [LH]', 'Muscle [OH]', 'Muscle [OD]']
-    group = st.selectbox('Choose one group', sample_class, key='sample_input')
-    threshold = st.number_input('Enter threshold of absolute correlation coefficient:', min_value=0.0, value=0.5, step=0.01)
-    # 데이터를 찾기 위해서 그룹명 포매팅
-    formatted_group = group_format(group)
 
-    # group 및 threshold를 선택하면 그려짐
+    group = st.selectbox('Choose one group', sample_class, key='group')
+    threshold = st.number_input('Enter threshold of absolute correlation coefficient:', min_value=0.0, value=0.5, step=0.01, key='threshold')
+
     if st.button('Create Group Network'):
+        st.session_state['create_network_pressed'] = True
+
+    if 'create_network_pressed' in st.session_state and st.session_state['create_network_pressed']:
+        formatted_group = group_format(group)  
         df_correlation = load_correlation_data(formatted_group, threshold)
         show_legend()
         plot_colored_network(df_interactions, df_correlation, gene_name)
-    else: 
+        st.session_state['create_network_pressed'] = False
+    elif 'create_network_pressed' not in st.session_state:
         plot_initial_pyvis(df_interactions, gene_name)
-
+        
 def group_format(sample_class):
     start_idx = sample_class.find("[")  # "["의 인덱스 찾기
     end_idx = sample_class.find("]")  # "]"의 인덱스 찾기
@@ -303,6 +306,40 @@ def group_format(sample_class):
         sample_class = sample_class[:start_idx-1] + '_' + sample_class[start_idx+1:end_idx]
 
     return sample_class
+
+'''
+    v1
+'''
+# def show_network_diagram(gene_name):
+    
+#     df_interactions = load_network_data(gene_name)
+    
+#     st.subheader(f"**Protein interaction around '{gene_name}'**")
+
+#     # threshold 및 group 선택
+#     sample_class = ['Adipose [LH]', 'Adipose [OH]', 'Adipose [OD]',
+#                     'Liver [LH]', 'Liver [OH]', 'Liver [OD]',
+#                     'Muscle [LH]', 'Muscle [OH]', 'Muscle [OD]']
+#     group = st.selectbox('Choose one group', sample_class, key='sample_input')
+#     threshold = st.number_input('Enter threshold of absolute correlation coefficient:', min_value=0.0, value=0.5, step=0.01)
+#     # 데이터를 찾기 위해서 그룹명 포매팅
+#     formatted_group = group_format(group)
+
+#     # group 및 threshold를 선택하면 그려짐
+#     if st.button('Create Group Network'):
+#         df_correlation = load_correlation_data(formatted_group, threshold)
+#         show_legend()
+#         plot_colored_network(df_interactions, df_correlation, gene_name)
+#     else: 
+#         plot_initial_pyvis(df_interactions, gene_name)
+
+# def group_format(sample_class):
+#     start_idx = sample_class.find("[")  # "["의 인덱스 찾기
+#     end_idx = sample_class.find("]")  # "]"의 인덱스 찾기
+#     if start_idx != -1 and end_idx != -1:  # "["와 "]"가 모두 존재하는 경우
+#         sample_class = sample_class[:start_idx-1] + '_' + sample_class[start_idx+1:end_idx]
+
+#     return sample_class
 
 '''
     v3 (혹시 몰라서 남겨둠)
