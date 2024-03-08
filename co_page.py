@@ -195,9 +195,6 @@ def write_co_page():
     selected_groups = st.multiselect('Choose one or two groups', sample_class, key='sample_input', max_selections=2)
     threshold = st.number_input('Enter threshold of absolute correlation coefficient:', min_value=0.0, value=0.5, step=0.01)
 
-
-
-
     samples = format_sample(selected_groups)
 
     if st.button('Create Network'):

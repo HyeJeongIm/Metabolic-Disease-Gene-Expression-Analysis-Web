@@ -10,6 +10,10 @@ def create_search_bar():
 
     genes_input = st.text_area('Enter gene names:')
     genes_list = re.split('[ ,\t\n]+', genes_input.strip())
+
+    # 빈 문자열인 경우 빈 리스트로 초기화
+    if genes_input.strip() == '':
+        genes_list = []
     st.write(f"Number of genes entered: {len(genes_list)}")  # Debug print
     
     if st.button('Search'):

@@ -277,7 +277,7 @@ def show_network_diagram(gene_name):
                     'Muscle [LH]', 'Muscle [OH]', 'Muscle [OD]']
     group = st.selectbox('Choose one group', sample_class, key='sample_input')
     threshold = st.number_input('Enter threshold of absolute correlation coefficient:', min_value=0.0, value=0.5, step=0.01)
-
+    # 데이터를 찾기 위해서 그룹명 포매팅
     formatted_group = group_format(group)
 
     # group 및 threshold를 선택하면 그려짐
