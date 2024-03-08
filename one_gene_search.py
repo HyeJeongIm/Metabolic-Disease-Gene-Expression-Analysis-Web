@@ -176,7 +176,7 @@ def load_network_data(gene_name):
     return interactions 
 
 def plot_initial_pyvis(df, gene_name):
-    with st.spinner('Drawing a grahp'):
+    with st.spinner('It make take few minutes'):
         net = Network(notebook=True, directed=False)
         # 이미 추가된 노드를 추적하기 위함
         seen_nodes = set()  
@@ -233,7 +233,7 @@ def show_legend():
     components.html(legend_html, height=100) 
     
 def plot_colored_network(df_interactions, df_correlation, gene_name):
-    with st.spinner('Drawing a graph'):
+    with st.spinner('It make take few minutes'):
         net = Network(notebook=True, directed=False, cdn_resources='remote')
         seen_nodes = set()
 
