@@ -276,7 +276,7 @@ def plot_heatmap(df, sample_choice):
     color = ['green', 'orange']
 
     gene_height = 50
-    max_genes_display = 20  # 최대로 표시할 유전자 수
+    max_genes_display = 40  # 최대로 표시할 유전자 수
     if len(final_df) > max_genes_display:
         heatmap_height = max_genes_display * gene_height
     else:
