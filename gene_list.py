@@ -233,7 +233,7 @@ def show_network_diagram(genes_list):
         df_correlation = load_correlation_data(formatted_group, threshold)
         show_legend()
         plot_colored_network(df_interactions, df_correlation, genes_list)
-    else: 
+    else:
         plot_initial_pyvis(df_interactions, genes_list)
     
 def group_format(sample_class):
