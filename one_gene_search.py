@@ -200,7 +200,8 @@ def plot_initial_pyvis(df, gene_name):
 
         HtmlFile = open('pyvis_net_graph.html', 'r', encoding='utf-8')
         source_code = HtmlFile.read() 
-        components.html(source_code, width=670, height=1070)
+        # components.html(source_code, width=670, height=1070)
+        st.components.v1.html(source_code, width=670, height=610)
 
 @st.cache_data(show_spinner=False)
 def load_correlation_data(group, threshold):
@@ -224,9 +225,12 @@ def show_legend():
             </svg>
             Negative correlation
         </div>
+        <div style="margin-top: 10px;">
+            Use your mouse wheel to zoom in or zoom out.
+        </div>
     </div>
     """
-    components.html(legend_html, height=55) 
+    components.html(legend_html, height=100) 
     
 def plot_colored_network(df_interactions, df_correlation, gene_name):
     with st.spinner('Drawing a graph'):
@@ -265,11 +269,15 @@ def plot_colored_network(df_interactions, df_correlation, gene_name):
 
         HtmlFile = open('pyvis_net_graph.html', 'r', encoding='utf-8')
         source_code = HtmlFile.read() 
-        components.html(source_code, width=670, height=1070)
+        # components.html(source_code, width=670, height=1070)
+        st.components.v1.html(source_code, width=670, height=610)
+
 
 def show_network_diagram(gene_name):
     
     df_interactions = load_network_data(gene_name)
+    
+    st.subheader(f"**[ Protein interaction around '{gene_name}'** ]")
 
     # threshold 및 group 선택
     sample_class = ['Adipose [LH]', 'Adipose [OH]', 'Adipose [OD]',
