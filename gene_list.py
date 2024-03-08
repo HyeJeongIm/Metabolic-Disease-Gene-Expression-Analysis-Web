@@ -1,19 +1,18 @@
 import streamlit as st
 import os
 import pandas as pd
-import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from pyvis.network import Network
 import streamlit.components.v1 as components
-from itertools import combinations
-import re 
+from itertools import combinations 
 from one_gene_search import custom_sort_key
+from one_gene_search import group_format
 
 '''
     heatmap
 '''
-@st.cache_data
+@st.cache_data(show_spinner=False)
 def custom_sort_key(file_name):
     """
     파일 이름을 기반으로 정렬하기 위한 사용자 정의 키 함수.
@@ -135,7 +134,7 @@ def load_correlation_data(group, threshold):
     return df_correlation_filtered
 
 def show_interaction(gene_list):
-    with st.spinner('그래프를 그리는 중입니다...'):
+    with st.spinner('Drawing a graph'):
         folder_path = './data/Gene-Gene Interaction/BIOGRID-ORGANISM-Homo_sapiens-4.4.229.tab3.txt'
         data = pd.read_csv(folder_path, sep='\t')
         
@@ -159,7 +158,7 @@ def show_legend():
     components.html(legend_html, height=55)   
 
 def plot_initial_pyvis(df_interactions, genes_list):
-    with st.spinner('그래프를 그리는 중입니다...'):
+    with st.spinner('Drawing a graph'):
         # NetworkX 그래프 생성
         net = Network(
             notebook=True,
@@ -178,7 +177,6 @@ def plot_initial_pyvis(df_interactions, genes_list):
                 net.add_edge(gene_pair[0], gene_pair[1], color='lightgrey')
 
         # 네트워크 그리기
-        net.show_buttons(filter_=['physics'])
         net.show("pyvis_net_graph.html")
 
         # html 파일 페이지에 나타내기
@@ -187,7 +185,7 @@ def plot_initial_pyvis(df_interactions, genes_list):
         components.html(source_code, width=670, height=1070)
         
 def plot_colored_network(df_interactions, df_correlation_filtered, genes_list):
-    with st.spinner('그래프를 그리는 중입니다...'):
+    with st.spinner('Drawing a graph'):
         net = Network(notebook=True, directed=False)
         
         for gene_pair in combinations(genes_list, 2):
@@ -206,15 +204,13 @@ def plot_colored_network(df_interactions, df_correlation_filtered, genes_list):
                         color = 'lightgrey'  
                         net.add_edge(gene_pair[0], gene_pair[1], color=color)
 
-                    
-
         # 네트워크 그리기
-        net.show_buttons(filter_=['physics'])
         net.show("pyvis_net_graph.html")
 
         HtmlFile = open('pyvis_net_graph.html', 'r', encoding='utf-8')
         source_code = HtmlFile.read() 
-        components.html(source_code, width=670, height=1070)       
+        components.html(source_code, width=670, height=1070)     
+
 def show_network_diagram(genes_list):
     folder_path = './data/Gene-Gene Interaction/BIOGRID-ORGANISM-Homo_sapiens-4.4.229.tab3.txt'
     data = pd.read_csv(folder_path, sep='\t')
@@ -222,15 +218,17 @@ def show_network_diagram(genes_list):
     df_interactions = pd.DataFrame(data)
     
     # threshold 및 group 선택
-    sample_class = ['Adipose_LH', 'Adipose_OH', 'Adipose_OD',
-                    'Liver_LH', 'Liver_OH', 'Liver_OD',
-                    'Muscle_LH', 'Muscle_OH', 'Muscle_OD']
+    sample_class = ['Adipose [LH]', 'Adipose [OH]', 'Adipose [OD]',
+                    'Liver [LH]', 'Liver [OH]', 'Liver [OD]',
+                    'Muscle [LH]', 'Muscle [OH]', 'Muscle [OD]']
     group = st.selectbox('Choose one group', sample_class, key='sample_input')
     threshold = st.number_input('Enter threshold:', min_value=0.0, value=0.5, step=0.01)
-    
+    # 데이터를 찾기 위해서 그룹명 포매팅
+    formatted_group = group_format(group)
+
     # group 및 threshold를 선택하면 그려짐
     if st.button('Create Gene List Correlation Network'):
-        df_correlation = load_correlation_data(group, threshold)
+        df_correlation = load_correlation_data(formatted_group, threshold)
         show_legend()
         plot_colored_network(df_interactions, df_correlation, genes_list)
     else: 

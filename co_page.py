@@ -224,11 +224,20 @@ def write_co_page():
             merged_df = pd.merge(df_sample0, df_sample1, on=['Gene', 'Gene.1'], how='outer', suffixes=('_Group_A', '_Group_B'))
             merged_df.fillna(0, inplace=True)
             merged_df = merged_df.rename(columns={'Gene': 'Gene1', 'Gene.1': 'Gene2'})
-
+            
             download_button(merged_df)
-            show_group_legend(samples)
-            show_combined_network(samples, threshold)
-            show_df(samples, threshold)
+
+            if len(merged_df) > 6170:
+                st.error('''
+                         \n
+                         Sorry, we can\'t draw a network with more than 6170 edges.\n
+                        Please type a higher threshold and try again.\n
+                        Data that needs to be drawn can be downloaded via the Download button.
+                         ''', icon="🚨")
+            else:
+                show_group_legend(samples)
+                show_combined_network(samples, threshold)
+                show_df(samples, threshold)
         else:
             st.error("Please select one or two groups.")
 
