@@ -4,6 +4,7 @@ import base64
 import os
 from pyvis.network import Network
 import streamlit.components.v1 as components
+from one_gene_search import str_to_float
 
 def create_header():
     st.title('Co-expression Network Analysis')
@@ -193,7 +194,7 @@ def write_co_page():
                     'Liver [LH]', 'Liver [OH]', 'Liver [OD]',
                     'Muscle [LH]', 'Muscle [OH]', 'Muscle [OD]']
     selected_groups = st.multiselect('Choose one or two groups', sample_class, key='sample_input', max_selections=2)
-    threshold = st.number_input('Enter threshold of absolute correlation coefficient:', min_value=0.0, value=0.5, step=0.01)
+    threshold = str_to_float()
 
     samples = format_sample(selected_groups)
 

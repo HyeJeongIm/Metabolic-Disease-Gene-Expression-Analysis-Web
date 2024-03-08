@@ -309,7 +309,7 @@ def group_format(sample_class):
 
 def str_to_float():
     while True:
-        input_text = st.text_input('Enter threshold of absolute correlation coefficient:', value='0.5')
+        input_text = st.text_input('Enter threshold of absolute correlation coefficient', value='0.5')
 
         if input_text.strip():  # 입력이 비어 있지 않은 경우
             if all(char.isdigit() or char == '.' for char in input_text) and input_text.count('.') <= 1:  # 입력이 숫자 또는 소수점으로만 이루어져 있고, 소수점이 하나 이하인 경우
