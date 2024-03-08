@@ -65,7 +65,7 @@ def show_legend():
 
 # 1개 그룹 선택 
 def create_network(df, file_name):
-    with st.spinner('Drawing a graph'):
+    with st.spinner('It make take few minutes'):
         net = Network(height='750px', width='100%', bgcolor='#ffffff', font_color='black')
         for index, row in df.iterrows():
             gene1 = row['Gene']
@@ -94,7 +94,7 @@ def show_network(file_path, threshold):
         st.error('No data to display.')
         
 def create_group_network(df, bgcolor='#ffffff', font_color='black'):
-    with st.spinner('Drawing a graph'):
+    with st.spinner('It make take few minutes'):
         net = Network(height='750px', width='100%', bgcolor=bgcolor, font_color=font_color)
         for index, row in df.iterrows():
             gene1 = row['Gene']
@@ -226,19 +226,19 @@ def write_co_page():
             merged_df = pd.merge(df_sample0, df_sample1, on=['Gene', 'Gene.1'], how='outer', suffixes=('_Group_A', '_Group_B'))
             merged_df.fillna(0, inplace=True)
             merged_df = merged_df.rename(columns={'Gene': 'Gene1', 'Gene.1': 'Gene2'})
-            
-            download_button(merged_df)
 
             if len(merged_df) > 6170:
                 st.error('''
-                         \n
-                         Sorry, we can\'t draw a network with more than 6170 edges.\n
+                        \n
+                        Sorry, we can\'t draw a network with more than 6170 edges.\n
                         Please type a higher threshold and try again.\n
                         Data that needs to be drawn can be downloaded via the Download button.
-                         ''', icon="🚨")
+                        ''', icon="🚨")
+                download_button(merged_df)
             else:
                 show_group_legend(samples)
                 show_combined_network(samples, threshold)
+                download_button(merged_df)
                 show_df(samples, threshold)
         else:
             st.error("Please select one or two groups.")
