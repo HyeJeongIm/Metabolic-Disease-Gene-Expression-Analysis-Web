@@ -6,7 +6,7 @@ from pyvis.network import Network
 import streamlit.components.v1 as components
 
 def create_header():
-    st.title('Co-Expression Network Analysis')
+    st.title('Co-expression Network Analysis')
 
 @st.cache_data(show_spinner=False)
 def load_data(file_path, threshold):
