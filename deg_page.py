@@ -46,8 +46,14 @@ def format_sample(sample_choice):
         if start_idx != -1 and end_idx != -1:  # "["와 "]"가 모두 존재하는 경우
             sample_choice[key] = sample_choice[key][:start_idx-1] + sample_choice[key][start_idx+1:end_idx]
     return sample_choice
-        
 
+def format_sample_original(sample_choice):
+    group =[]
+    for i in range(len(sample_choice)):
+        group.append(sample_choice[i][:-2] + ' [' + sample_choice[i][-2:] + ']')
+
+    return group
+        
 def plot_pca(sample_choice):
     # PCA에 사용할 데이터 파일 불러오기
     coordinate_path = f'./data/PCA/PCACoordinate_{sample_choice[0]}_VS_{sample_choice[1]}.txt'
@@ -170,49 +176,40 @@ def plot_volcano(sample_choice, p_value_choice, fold_change_choice):
     )
     st.plotly_chart(fig)
 
-    show_table(df)
+    show_table(df, sample_choice, 'Positive', 'Up-regulated')
+    show_table(df, sample_choice, 'Negative', 'Down-regulated')
     plot_heatmap(df, sample_choice)
 
-def show_table(df):
-    st.write('##### DEG List')
+def show_table(df, sample_choice, txt, deg_type):
+    group = format_sample_original(sample_choice)
 
-    filtered_df = df[df['DEG Group'].isin(['Up-regulated', 'Down-regulated'])]
-    filtered_df = filtered_df.drop(columns=['DEG Group'])
-    filtered_df= filtered_df.sort_values(by='FDR-adjusted p-value', ascending=True)
+    st.write(f'##### Log₂ Fold-change {txt}, ({deg_type} in {group[0]})')
+
+    deg_df = df[df['DEG Group'].isin([deg_type])]
+    deg_df = deg_df.drop(columns=['DEG Group'])
+    deg_df = deg_df.sort_values(by='FDR-adjusted p-value', ascending=True)
 
     # p-value 값 다시 가져오기
-    filtered_df['FDR-adjusted p-value'] = 10**(-filtered_df['FDR-adjusted p-value'])
-
-    # p-value를 지수 형식으로 변환
-    # filtered_df['FDR-adjusted p-value'] = filtered_df['FDR-adjusted p-value'].apply(lambda x: format(x, '.6e'))
+    deg_df['FDR-adjusted p-value'] = 10**(-deg_df['FDR-adjusted p-value'])
 
     # 인덱스 재설정 및 인덱스 값 조정
-    filtered_df = filtered_df.reset_index(drop=True)
-    filtered_df.index += 1
+    deg_df = deg_df.reset_index(drop=True)
+    deg_df.index += 1
     
     # 컬럼명 변경
-    filtered_df = filtered_df.rename(columns={'Log2FoldChange' : 'Log₂ Fold-change', 'FDR-adjusted p-value' : 'P-value'})
+    deg_df = deg_df.rename(columns={'Log2FoldChange' : 'Log₂ Fold-change', 'FDR-adjusted p-value' : 'P-value'})
 
     st.dataframe(
-        filtered_df,#.style.apply(color_rows, axis=1), 
+        deg_df, 
         width=600, 
         hide_index=True,
         column_config={
             'P-value' : st.column_config.NumberColumn(format='%.6e')
         })
 
-def color_rows(row):
-    if row['Log₂ Fold-change'] > 0:
-        return ['background-color: #f48db4'] * len(row)
-    elif row['Log₂ Fold-change'] < 0:
-        return ['background-color: #9cd3d3'] * len(row)
-    else:
-        return [''] * len(row)
-    
+
 def show_legend(sample_choice):
-    group =[]
-    for i in range(len(sample_choice)):
-        group.append(sample_choice[i][:-2] + ' [' + sample_choice[i][-2:] + ']')
+    group = format_sample_original(sample_choice)
 
     legend_html = f"""
     <div style="position: fixed; top: 55px; right: 10px; background-color: white; padding: 10px; border-radius: 10px; border: 1px solid #e1e4e8;">
@@ -394,7 +391,6 @@ def plot_pathway(group1, group2, p_value, fold_change, categories):
 
             except FileNotFoundError:
                 st.error(f"File not found: {file_path}")
-
 
 ### 같은 category에 대해 "All", group1, group2 순서대로 결과를 표시
 # def plot_pathway(group1, group2, p_value, fold_change, categories):
