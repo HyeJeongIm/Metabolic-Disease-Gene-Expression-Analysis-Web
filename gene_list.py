@@ -1,19 +1,18 @@
 import streamlit as st
 import os
 import pandas as pd
-import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from pyvis.network import Network
 import streamlit.components.v1 as components
-from itertools import combinations
-import re 
+from itertools import combinations 
 from one_gene_search import custom_sort_key
+from one_gene_search import group_format
 
 '''
     heatmap
 '''
-@st.cache_data
+@st.cache_data(show_spinner=False)
 def custom_sort_key(file_name):
     """
     파일 이름을 기반으로 정렬하기 위한 사용자 정의 키 함수.
@@ -224,6 +223,7 @@ def show_network_diagram(genes_list):
                     'Liver [LH]', 'Liver [OH]', 'Liver [OD]',
                     'Muscle [LH]', 'Muscle [OH]', 'Muscle [OD]']
     group = st.selectbox('Choose one group', sample_class, key='sample_input')
+
     threshold = st.number_input('Enter threshold of absolute correlation coefficient', min_value=0.0, value=0.5, step=0.01)
     # 데이터를 찾기 위해서 그룹명 포매팅
     formatted_group = group_format(group)
