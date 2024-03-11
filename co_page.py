@@ -66,20 +66,19 @@ def show_legend():
 
 # 1개 그룹 선택 
 def create_network(df, file_name):
-    with st.spinner('It make take few minutes'):
-        net = Network(height='750px', width='100%', bgcolor='#ffffff', font_color='black')
-        for index, row in df.iterrows():
-            gene1 = row['Gene']
-            gene2 = row['Gene.1']
-            weight = row['Correlation coefficient']
-            
-            # 상관계수 값에 따라 엣지 색상 결정
-            edge_color = 'red' if weight > 0 else 'blue'
-            
-            net.add_node(gene1, label=gene1, color='grey', title=gene1)
-            net.add_node(gene2, label=gene2, color='grey', title=gene2)
-            net.add_edge(gene1, gene2, title=str(weight), value=abs(weight), color=edge_color)
-        return net
+    net = Network(height='750px', width='100%', bgcolor='#ffffff', font_color='black')
+    for index, row in df.iterrows():
+        gene1 = row['Gene']
+        gene2 = row['Gene.1']
+        weight = row['Correlation coefficient']
+        
+        # 상관계수 값에 따라 엣지 색상 결정
+        edge_color = 'red' if weight > 0 else 'blue'
+        
+        net.add_node(gene1, label=gene1, color='grey', title=gene1)
+        net.add_node(gene2, label=gene2, color='grey', title=gene2)
+        net.add_edge(gene1, gene2, title=str(weight), value=abs(weight), color=edge_color)
+    return net
 
 def show_network(file_path, threshold):
     filtered_df = load_data(file_path, threshold)
@@ -95,20 +94,19 @@ def show_network(file_path, threshold):
         st.error('No data to display.')
         
 def create_group_network(df, bgcolor='#ffffff', font_color='black'):
-    with st.spinner('It make take few minutes'):
-        net = Network(height='750px', width='100%', bgcolor=bgcolor, font_color=font_color)
-        for index, row in df.iterrows():
-            gene1 = row['Gene']
-            gene2 = row['Gene.1']
-            weight = row['Correlation coefficient']
-            color = row['color']  # 엣지 색상 지정
-            
-            # 노드 색상을 'lightgrey'로 고정
-            net.add_node(gene1, label=gene1, title=f"{gene1}: {weight}", color='grey')
-            net.add_node(gene2, label=gene2, title=f"{gene2}: {weight}", color='grey')
-            # 엣지 색상 적용
-            net.add_edge(gene1, gene2, title=f"{weight}", value=abs(weight), color=color)
-        return net
+    net = Network(height='750px', width='100%', bgcolor=bgcolor, font_color=font_color)
+    for index, row in df.iterrows():
+        gene1 = row['Gene']
+        gene2 = row['Gene.1']
+        weight = row['Correlation coefficient']
+        color = row['color']  # 엣지 색상 지정
+        
+        # 노드 색상을 'lightgrey'로 고정
+        net.add_node(gene1, label=gene1, title=f"{gene1}: {weight}", color='grey')
+        net.add_node(gene2, label=gene2, title=f"{gene2}: {weight}", color='grey')
+        # 엣지 색상 적용
+        net.add_edge(gene1, gene2, title=f"{weight}", value=abs(weight), color=color)
+    return net
 
 '''
     2개 그룹 선택
@@ -202,31 +200,35 @@ def write_co_page():
         st.subheader("Network")
 
         if len(samples) == 1:
-            group = samples[0]
-            file_path = os.path.join('data', 'Gene-Gene Expression Correlation', 'Correlation Higher Than 0.5', f'GeneGene_HighCorrelation_{group}_0.5.txt')
+            with st.spinner('It may takes few minutes'):
+                group = samples[0]
+                file_path = os.path.join('data', 'Gene-Gene Expression Correlation', 'Correlation Higher Than 0.5', f'GeneGene_HighCorrelation_{group}_0.5.txt')
             if os.path.isfile(file_path):
                 # 다운로드용 데이터프레임
-                filtered_df = load_data(file_path, threshold)
-                filtered_df = filtered_df.rename(columns={'Gene': 'Gene1', 'Gene.1': 'Gene2'})
+                with st.spinner('It may takes few minutes'):
+                    filtered_df = load_data(file_path, threshold)
+                    filtered_df = filtered_df.rename(columns={'Gene': 'Gene1', 'Gene.1': 'Gene2'})
 
                 show_legend()
-                show_network(file_path, threshold)
-                download_button(filtered_df)
+                with st.spinner('It may takes few minutes'):
+                    show_network(file_path, threshold)
+                    download_button(filtered_df)
             else:
                 st.error(f"File for {group} does not exist.")
         elif len(samples) == 2:
             # 다운로드용 데이터프레임
-            pathes = []
-            for i in range(len(samples)):
-                sample_path = f'./data/Gene-Gene Expression Correlation/Correlation Higher Than 0.5/GeneGene_HighCorrelation_{samples[i]}_0.5.txt'
-                pathes.append(sample_path)
-            
-            df_sample0 = load_data(pathes[0], threshold)
-            df_sample1 = load_data(pathes[1], threshold)
+            with st.spinner('It may takes few minutes'):
+                pathes = []
+                for i in range(len(samples)):
+                    sample_path = f'./data/Gene-Gene Expression Correlation/Correlation Higher Than 0.5/GeneGene_HighCorrelation_{samples[i]}_0.5.txt'
+                    pathes.append(sample_path)
+                
+                df_sample0 = load_data(pathes[0], threshold)
+                df_sample1 = load_data(pathes[1], threshold)
 
-            merged_df = pd.merge(df_sample0, df_sample1, on=['Gene', 'Gene.1'], how='outer', suffixes=('_Group_A', '_Group_B'))
-            merged_df.fillna(0, inplace=True)
-            merged_df = merged_df.rename(columns={'Gene': 'Gene1', 'Gene.1': 'Gene2'})
+                merged_df = pd.merge(df_sample0, df_sample1, on=['Gene', 'Gene.1'], how='outer', suffixes=('_Group_A', '_Group_B'))
+                merged_df.fillna(0, inplace=True)
+                merged_df = merged_df.rename(columns={'Gene': 'Gene1', 'Gene.1': 'Gene2'})
 
             if len(merged_df) > 6170:
                 st.error('''
@@ -238,8 +240,9 @@ def write_co_page():
                 download_button(merged_df)
             else:
                 show_group_legend(samples)
-                show_combined_network(samples, threshold)
-                download_button(merged_df)
+                with st.spinner('It may takes few minutes'):
+                    show_combined_network(samples, threshold)
+                    download_button(merged_df)
                 show_df(samples, threshold)
         else:
             st.error("Please select one or two groups.")
