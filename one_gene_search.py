@@ -166,7 +166,7 @@ def show_box_plot(name, z_score=False):
 '''
     Interaction Network Diagram
 ''' 
-  
+
 @st.cache_data(show_spinner=False)
 def load_network_data(gene_name):
     file_path = 'data\Gene-Gene Interaction\BIOGRID-ORGANISM-Homo_sapiens-4.4.229.tab3.txt'
@@ -269,35 +269,33 @@ def plot_colored_network(df_interactions, df_correlation, gene_name):
 
         HtmlFile = open('pyvis_net_graph.html', 'r', encoding='utf-8')
         source_code = HtmlFile.read() 
-        # components.html(source_code, width=670, height=1070)
         st.components.v1.html(source_code, width=670, height=610)
 
-
 def show_network_diagram(gene_name):
-    
-    df_interactions = load_network_data(gene_name)
-    
-    st.subheader(f"**Protein interaction around '{gene_name}'**")
+    with st.spinner('It make take few minutes'):
+        df_interactions = load_network_data(gene_name)
+        
+        st.subheader(f"**Protein interaction around '{gene_name}'**")
 
-    # threshold 및 group 선택
-    sample_class = ['Adipose [LH]', 'Adipose [OH]', 'Adipose [OD]',
-                    'Liver [LH]', 'Liver [OH]', 'Liver [OD]',
-                    'Muscle [LH]', 'Muscle [OH]', 'Muscle [OD]']
+        # threshold 및 group 선택
+        sample_class = ['Adipose [LH]', 'Adipose [OH]', 'Adipose [OD]',
+                        'Liver [LH]', 'Liver [OH]', 'Liver [OD]',
+                        'Muscle [LH]', 'Muscle [OH]', 'Muscle [OD]']
 
-    group = st.selectbox('Choose one group', sample_class, key='group')
-    threshold = str_to_float()
+        group = st.selectbox('Choose one group', sample_class, key='group')
+        threshold = str_to_float()
 
-    if st.button('Create Group Network'):
-        st.session_state['create_network_pressed'] = True
+        if st.button('Create Group Network'):
+            st.session_state['create_network_pressed'] = True
 
-    if 'create_network_pressed' in st.session_state and st.session_state['create_network_pressed']:
-        formatted_group = group_format(group)  
-        df_correlation = load_correlation_data(formatted_group, threshold)
-        show_legend()
-        plot_colored_network(df_interactions, df_correlation, gene_name)
-        st.session_state['create_network_pressed'] = False
-    elif 'create_network_pressed' not in st.session_state:
-        plot_initial_pyvis(df_interactions, gene_name)
+        if 'create_network_pressed' in st.session_state and st.session_state['create_network_pressed']:
+            formatted_group = group_format(group)  
+            df_correlation = load_correlation_data(formatted_group, threshold)
+            show_legend()
+            plot_colored_network(df_interactions, df_correlation, gene_name)
+            st.session_state['create_network_pressed'] = False
+        elif 'create_network_pressed' not in st.session_state:
+            plot_initial_pyvis(df_interactions, gene_name)
         
 def group_format(sample_class):
     start_idx = sample_class.find("[")  # "["의 인덱스 찾기
