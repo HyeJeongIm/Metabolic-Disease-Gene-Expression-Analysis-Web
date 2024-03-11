@@ -204,38 +204,40 @@ def plot_colored_network(df_interactions, df_correlation_filtered, genes_list):
                         net.add_edge(gene_pair[0], gene_pair[1], color=color)
 
         # 네트워크 그리기
-        net.show("pyvis_net_graph.html")
+        net.show("plot_colored_network.html")
 
-        HtmlFile = open('pyvis_net_graph.html', 'r', encoding='utf-8')
+        HtmlFile = open('plot_colored_network.html', 'r', encoding='utf-8')
         source_code = HtmlFile.read() 
         st.components.v1.html(source_code, width=670, height=610)
         
 def show_network_diagram(genes_list):
     folder_path = './data/Gene-Gene Interaction/BIOGRID-ORGANISM-Homo_sapiens-4.4.229.tab3.txt'
     data = pd.read_csv(folder_path, sep='\t')
-
     df_interactions = pd.DataFrame(data)
     
     st.subheader(f"**Network interactions between input Genes**")
 
-    # threshold 및 group 선택
     sample_class = ['Adipose [LH]', 'Adipose [OH]', 'Adipose [OD]',
                     'Liver [LH]', 'Liver [OH]', 'Liver [OD]',
                     'Muscle [LH]', 'Muscle [OH]', 'Muscle [OD]']
-    group = st.selectbox('Choose one group', sample_class, key='sample_input')
-
-    threshold = st.number_input('Enter threshold of absolute correlation coefficient', min_value=0.0, value=0.5, step=0.01)
-    # 데이터를 찾기 위해서 그룹명 포매팅
-    formatted_group = group_format(group)
+    group = st.selectbox('Choose one group', sample_class, key='group_list_input')
+    threshold = str_to_float()
     
-    # group 및 threshold를 선택하면 그려짐
-    if st.button('Create Correlation Network'):
+    if st.button('Create Group Network'):
+        st.session_state['create_network_pressed'] = True
+    else:
+        st.session_state['create_network_pressed'] = False
+    
+    if 'pressed' in st.session_state and st.session_state['pressed'] and not st.session_state.get('initial_network_plotted', False):
+        plot_initial_pyvis(df_interactions, genes_list)
+        st.session_state['initial_network_plotted'] = True  
+
+    if 'create_network_pressed' in st.session_state and st.session_state['create_network_pressed']:
+        formatted_group = group_format(group)  
         df_correlation = load_correlation_data(formatted_group, threshold)
         show_legend()
         plot_colored_network(df_interactions, df_correlation, genes_list)
-    else:
-        plot_initial_pyvis(df_interactions, genes_list)
-    
+
 def group_format(sample_class):
     start_idx = sample_class.find("[")  # "["의 인덱스 찾기
     end_idx = sample_class.find("]")  # "]"의 인덱스 찾기
@@ -243,3 +245,16 @@ def group_format(sample_class):
         sample_class = sample_class[:start_idx-1] + '_' + sample_class[start_idx+1:end_idx]
 
     return sample_class
+
+def str_to_float():
+    while True:
+        input_text = st.text_input('Enter threshold of absolute correlation coefficient', value='0.5')
+
+        if input_text.strip():  # 입력이 비어 있지 않은 경우
+            if all(char.isdigit() or char == '.' for char in input_text) and input_text.count('.') <= 1:  # 입력이 숫자 또는 소수점으로만 이루어져 있고, 소수점이 하나 이하인 경우
+                input_float = float(input_text)
+                return input_float
+            else:
+                st.error('Please enter a valid float number')
+        else:
+            st.error('Please enter a value')  # 입력이 비어 있는 경우

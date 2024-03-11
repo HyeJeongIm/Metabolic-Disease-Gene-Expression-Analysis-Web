@@ -14,11 +14,12 @@ def create_search_bar():
     # 빈 문자열인 경우 빈 리스트로 초기화
     if genes_input.strip() == '':
         genes_list = []
-    st.write(f"Number of genes entered: {len(genes_list)}")  # Debug print
-    
+    st.write(f"Number of genes entered: {len(genes_list)}")
+
     if st.button('Search'):
         st.session_state['pressed'] = True
         st.session_state['gene_list'] = genes_list
+        st.session_state['create_network_pressed'] = False
 
     if 'pressed' in st.session_state and st.session_state['pressed']:
         gene_list.show_heatmap(st.session_state['gene_list'], base_path)
