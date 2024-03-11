@@ -157,86 +157,75 @@ def show_legend():
     components.html(legend_html, height=100) 
 
 def plot_initial_pyvis(df_interactions, genes_list):
-    with st.spinner('It make take few minutes'):
-        # NetworkX 그래프 생성
-        net = Network(
-            notebook=True,
-            directed=False,
-        )
+    # NetworkX 그래프 생성
+    net = Network(
+        notebook=True,
+        directed=False,
+    )
 
-        for gene_pair in combinations(genes_list, 2):
-            # gene_pair의 상호 작용을 데이터프레임에 추가
+    for gene_pair in combinations(genes_list, 2):
+        # gene_pair의 상호 작용을 데이터프레임에 추가
+        interactions = df_interactions[((df_interactions['Official Symbol Interactor A'] == gene_pair[0]) & (df_interactions['Official Symbol Interactor B'] == gene_pair[1])) |
+                        ((df_interactions['Official Symbol Interactor A'] == gene_pair[1]) & (df_interactions['Official Symbol Interactor B'] == gene_pair[0]))]
+        if not interactions.empty:
+            # 노드 추가
+            net.add_node(gene_pair[0], label=gene_pair[0], title=gene_pair[0], size=15, color='grey')
+            net.add_node(gene_pair[1], label=gene_pair[1], title=gene_pair[1], size=15, color='grey')
+            # 엣지 추가
+            net.add_edge(gene_pair[0], gene_pair[1], color='lightgrey')
+
+    # 네트워크 그리기
+    net.show("pyvis_net_graph.html")
+
+    # html 파일 페이지에 나타내기
+    HtmlFile = open('pyvis_net_graph.html', 'r', encoding='utf-8')
+    source_code = HtmlFile.read() 
+    st.components.v1.html(source_code, width=670, height=610)
+        
+def plot_colored_network(df_interactions, df_correlation_filtered, genes_list):
+    net = Network(notebook=True, directed=False)
+    
+    for gene_pair in combinations(genes_list, 2):
             interactions = df_interactions[((df_interactions['Official Symbol Interactor A'] == gene_pair[0]) & (df_interactions['Official Symbol Interactor B'] == gene_pair[1])) |
                             ((df_interactions['Official Symbol Interactor A'] == gene_pair[1]) & (df_interactions['Official Symbol Interactor B'] == gene_pair[0]))]
             if not interactions.empty:
-                # 노드 추가
                 net.add_node(gene_pair[0], label=gene_pair[0], title=gene_pair[0], size=15, color='grey')
                 net.add_node(gene_pair[1], label=gene_pair[1], title=gene_pair[1], size=15, color='grey')
-                # 엣지 추가
-                net.add_edge(gene_pair[0], gene_pair[1], color='lightgrey')
 
-        # 네트워크 그리기
-        net.show("pyvis_net_graph.html")
+                correlation = df_correlation_filtered[(df_correlation_filtered['Gene'] == gene_pair[0]) & (df_correlation_filtered['Gene.1'] == gene_pair[1]) | (df_correlation_filtered['Gene'] == gene_pair[1]) & (df_correlation_filtered['Gene.1'] == gene_pair[0])]
+                if not correlation.empty:
+                    color = 'red' if correlation['Correlation coefficient'].values[0] > 0 else 'blue'
+                    weight = abs(correlation['Correlation coefficient'].values[0])
+                    net.add_edge(gene_pair[0], gene_pair[1], color=color, value=weight, title=f"{weight}")
+                else:
+                    color = 'lightgrey'  
+                    net.add_edge(gene_pair[0], gene_pair[1], color=color)
 
-        # html 파일 페이지에 나타내기
-        HtmlFile = open('pyvis_net_graph.html', 'r', encoding='utf-8')
-        source_code = HtmlFile.read() 
-        st.components.v1.html(source_code, width=670, height=610)
+    # 네트워크 그리기
+    net.show("plot_colored_network.html")
+
+    HtmlFile = open('plot_colored_network.html', 'r', encoding='utf-8')
+    source_code = HtmlFile.read() 
+    st.components.v1.html(source_code, width=670, height=610)
         
-def plot_colored_network(df_interactions, df_correlation_filtered, genes_list):
-    with st.spinner('It make take few minutes'):
-        net = Network(notebook=True, directed=False)
-        
-        for gene_pair in combinations(genes_list, 2):
-                interactions = df_interactions[((df_interactions['Official Symbol Interactor A'] == gene_pair[0]) & (df_interactions['Official Symbol Interactor B'] == gene_pair[1])) |
-                                ((df_interactions['Official Symbol Interactor A'] == gene_pair[1]) & (df_interactions['Official Symbol Interactor B'] == gene_pair[0]))]
-                if not interactions.empty:
-                    net.add_node(gene_pair[0], label=gene_pair[0], title=gene_pair[0], size=15, color='grey')
-                    net.add_node(gene_pair[1], label=gene_pair[1], title=gene_pair[1], size=15, color='grey')
-
-                    correlation = df_correlation_filtered[(df_correlation_filtered['Gene'] == gene_pair[0]) & (df_correlation_filtered['Gene.1'] == gene_pair[1]) | (df_correlation_filtered['Gene'] == gene_pair[1]) & (df_correlation_filtered['Gene.1'] == gene_pair[0])]
-                    if not correlation.empty:
-                        color = 'red' if correlation['Correlation coefficient'].values[0] > 0 else 'blue'
-                        weight = abs(correlation['Correlation coefficient'].values[0])
-                        net.add_edge(gene_pair[0], gene_pair[1], color=color, value=weight, title=f"{weight}")
-                    else:
-                        color = 'lightgrey'  
-                        net.add_edge(gene_pair[0], gene_pair[1], color=color)
-
-        # 네트워크 그리기
-        net.show("plot_colored_network.html")
-
-        HtmlFile = open('plot_colored_network.html', 'r', encoding='utf-8')
-        source_code = HtmlFile.read() 
-        st.components.v1.html(source_code, width=670, height=610)
-        
-def show_network_diagram(genes_list):
-    folder_path = './data/Gene-Gene Interaction/BIOGRID-ORGANISM-Homo_sapiens-4.4.229.tab3.txt'
-    data = pd.read_csv(folder_path, sep='\t')
-    df_interactions = pd.DataFrame(data)
-    
-    st.subheader(f"**Network interactions between input Genes**")
-
-    sample_class = ['Adipose [LH]', 'Adipose [OH]', 'Adipose [OD]',
-                    'Liver [LH]', 'Liver [OH]', 'Liver [OD]',
-                    'Muscle [LH]', 'Muscle [OH]', 'Muscle [OD]']
-    group = st.selectbox('Choose one group', sample_class, key='group_list_input')
-    threshold = str_to_float()
-    
-    if st.button('Create Group Network'):
-        st.session_state['create_network_pressed'] = True
-    else:
-        st.session_state['create_network_pressed'] = False
+def show_network_diagram(genes_list, group, threshold):
+    with st.spinner('It may takes few minutes'):
+        folder_path = './data/Gene-Gene Interaction/BIOGRID-ORGANISM-Homo_sapiens-4.4.229.tab3.txt'
+        data = pd.read_csv(folder_path, sep='\t')
+        df_interactions = pd.DataFrame(data)
     
     if 'pressed' in st.session_state and st.session_state['pressed'] and not st.session_state.get('initial_network_plotted', False):
-        plot_initial_pyvis(df_interactions, genes_list)
-        st.session_state['initial_network_plotted'] = True  
+        with st.spinner('It may takes few minutes'):
+            plot_initial_pyvis(df_interactions, genes_list)
+            st.session_state['initial_network_plotted'] = True  
 
     if 'create_network_pressed' in st.session_state and st.session_state['create_network_pressed']:
-        formatted_group = group_format(group)  
-        df_correlation = load_correlation_data(formatted_group, threshold)
+        with st.spinner('It may takes few minutes'):
+            formatted_group = group_format(group)  
+            df_correlation = load_correlation_data(formatted_group, threshold)
         show_legend()
-        plot_colored_network(df_interactions, df_correlation, genes_list)
+        with st.spinner('It may takes few minutes'):
+            plot_colored_network(df_interactions, df_correlation, genes_list)
 
 def group_format(sample_class):
     start_idx = sample_class.find("[")  # "["의 인덱스 찾기
@@ -246,15 +235,15 @@ def group_format(sample_class):
 
     return sample_class
 
-def str_to_float():
-    while True:
-        input_text = st.text_input('Enter threshold of absolute correlation coefficient', value='0.5')
+# def str_to_float():
+#     while True:
+#         input_text = st.text_input('Enter threshold of absolute correlation coefficient', value='0.5')
 
-        if input_text.strip():  # 입력이 비어 있지 않은 경우
-            if all(char.isdigit() or char == '.' for char in input_text) and input_text.count('.') <= 1:  # 입력이 숫자 또는 소수점으로만 이루어져 있고, 소수점이 하나 이하인 경우
-                input_float = float(input_text)
-                return input_float
-            else:
-                st.error('Please enter a valid float number')
-        else:
-            st.error('Please enter a value')  # 입력이 비어 있는 경우
+#         if input_text.strip():  # 입력이 비어 있지 않은 경우
+#             if all(char.isdigit() or char == '.' for char in input_text) and input_text.count('.') <= 1:  # 입력이 숫자 또는 소수점으로만 이루어져 있고, 소수점이 하나 이하인 경우
+#                 input_float = float(input_text)
+#                 return input_float
+#             else:
+#                 st.error('Please enter a valid float number')
+#         else:
+#             st.error('Please enter a value')  # 입력이 비어 있는 경우
