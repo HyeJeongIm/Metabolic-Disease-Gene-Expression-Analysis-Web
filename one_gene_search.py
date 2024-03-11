@@ -176,7 +176,7 @@ def load_network_data(gene_name):
     return interactions 
 
 def plot_initial_pyvis(df, gene_name):
-    with st.spinner('It make take few minutes'):
+    # with st.spinner('it may takes few minutes'):
         net = Network(notebook=True, directed=False)
         # 이미 추가된 노드를 추적하기 위함
         seen_nodes = set()  
@@ -233,7 +233,7 @@ def show_legend():
     components.html(legend_html, height=100) 
     
 def plot_colored_network(df_interactions, df_correlation, gene_name):
-    with st.spinner('It make take few minutes'):
+    # with st.spinner('It may takes few minutes'):
         net = Network(notebook=True, directed=False, cdn_resources='remote')
         seen_nodes = set()
 
@@ -271,30 +271,21 @@ def plot_colored_network(df_interactions, df_correlation, gene_name):
         source_code = HtmlFile.read() 
         st.components.v1.html(source_code, width=670, height=610)
 
-def show_network_diagram(gene_name):
-    with st.spinner('It make take few minutes'):
-        df_interactions = load_network_data(gene_name)
-        
-        st.subheader(f"**Protein interaction around '{gene_name}'**")
+def show_network_diagram(gene_name, group, threshold): 
+    df_interactions = load_network_data(gene_name)
 
-        # threshold 및 group 선택
-        sample_class = ['Adipose [LH]', 'Adipose [OH]', 'Adipose [OD]',
-                        'Liver [LH]', 'Liver [OH]', 'Liver [OD]',
-                        'Muscle [LH]', 'Muscle [OH]', 'Muscle [OD]']
+    if st.button('Create Group Network'):
+        st.session_state['create_network_pressed'] = True
 
-        group = st.selectbox('Choose one group', sample_class, key='group')
-        threshold = str_to_float()
-
-        if st.button('Create Group Network'):
-            st.session_state['create_network_pressed'] = True
-
-        if 'create_network_pressed' in st.session_state and st.session_state['create_network_pressed']:
-            formatted_group = group_format(group)  
-            df_correlation = load_correlation_data(formatted_group, threshold)
-            show_legend()
+    if 'create_network_pressed' in st.session_state and st.session_state['create_network_pressed']:
+        formatted_group = group_format(group)  
+        df_correlation = load_correlation_data(formatted_group, threshold)
+        show_legend()
+        with st.spinner('It may takes few minutes'):
             plot_colored_network(df_interactions, df_correlation, gene_name)
             st.session_state['create_network_pressed'] = False
-        elif 'create_network_pressed' not in st.session_state:
+    elif 'create_network_pressed' not in st.session_state:
+        with st.spinner('It may takes few minutes'):
             plot_initial_pyvis(df_interactions, gene_name)
         
 def group_format(sample_class):
@@ -317,6 +308,15 @@ def str_to_float():
                 st.error('Please enter a valid float number')
         else:
             st.error('Please enter a value')  # 입력이 비어 있는 경우
+
+# def spinner_state(gene_name):
+#     # 'initial_loading' 키가 없거나 True일 때만 상단에 spinner 표시
+#     if 'initial_loading' not in st.session_state or st.session_state['initial_loading']:
+#         with st.spinner('It may takes few minutes'):
+#             st.session_state['initial_loading'] = False
+#             show_network_diagram(gene_name)
+#     else:
+#         show_network_diagram(gene_name)
 
 '''
     v1
