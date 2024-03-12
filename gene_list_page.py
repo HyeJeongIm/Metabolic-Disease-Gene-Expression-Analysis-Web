@@ -24,15 +24,15 @@ def create_search_bar():
     if 'pressed' in st.session_state and st.session_state['pressed']:
         gene_list.show_heatmap(st.session_state['gene_list'], base_path)
 
-        st.subheader(f"**Network interactions between input Genes**")
+        st.subheader(f"**Protein interactions between input Genes**")
 
         sample_class = ['Adipose [LH]', 'Adipose [OH]', 'Adipose [OD]',
                         'Liver [LH]', 'Liver [OH]', 'Liver [OD]',
                         'Muscle [LH]', 'Muscle [OH]', 'Muscle [OD]']
-        group = st.selectbox('Choose one group', sample_class, key='group_list_input')
+        group = st.selectbox('Choose a sample group for annotation', sample_class, key='group_list_input')
         threshold = str_to_float()
 
-        if st.button('Create Group Network'):
+        if st.button('Apply'):
             st.session_state['create_network_pressed'] = True
         else:
             st.session_state['create_network_pressed'] = False

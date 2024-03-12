@@ -116,12 +116,12 @@ def show_box_plot(name, z_score=False):
     """, unsafe_allow_html=True)
 
     # Markdown을 사용하여 굵은 텍스트로 라벨을 표시
-    st.markdown("**Expression transform:**")
+    st.markdown("**Expression levels in:**")
 
     # st.radio에서 라벨을 제거하고 옵션만 표시
     transform = st.radio(
         "",  # 라벨 부분을 비워둠
-        ['Raw', 'Z-Score'],
+        ['RMA-Normalized', 'Z-Score'],
         index=int(st.session_state.get('z_score', False))
     )
 
@@ -272,22 +272,22 @@ def plot_colored_network(df_interactions, df_correlation, gene_name):
         st.components.v1.html(source_code, width=670, height=610)
 
 def show_network_diagram(gene_name, group, threshold): 
-    with st.spinner('It may takes few minutes'):
+    with st.spinner('It may takes a few minutes'):
         df_interactions = load_network_data(gene_name)
 
-    if st.button('Create Group Network'):
+    if st.button('Apply'):
         st.session_state['create_network_pressed'] = True
 
     if 'create_network_pressed' in st.session_state and st.session_state['create_network_pressed']:
-        with st.spinner('It may takes few minutes'):
+        with st.spinner('it may takes a few minutes'):
             formatted_group = group_format(group)  
             df_correlation = load_correlation_data(formatted_group, threshold)
         show_legend()
-        with st.spinner('It may takes few minutes'):
+        with st.spinner('It may takes a few minutes'):
             plot_colored_network(df_interactions, df_correlation, gene_name)
             st.session_state['create_network_pressed'] = False
     elif 'create_network_pressed' not in st.session_state:
-        with st.spinner('It may takes few minutes'):
+        with st.spinner('It may takes a few minutes'):
             plot_initial_pyvis(df_interactions, gene_name)
         
 def group_format(sample_class):

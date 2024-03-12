@@ -115,7 +115,7 @@ def show_heatmap(genes_list, base_path):
         fig.update_layout(
             width=900,
             height=max(total_height, 600),  # 최소 높이를 보장하면서 전체 높이 조정
-            title_text='Heatmap for All Sample Group',
+            title_text='Expression heatmaps',
             showlegend=False,
         )
 
