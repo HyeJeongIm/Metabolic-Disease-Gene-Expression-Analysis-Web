@@ -129,8 +129,12 @@ def plot_volcano(sample_choice, p_value_choice, fold_change_choice):
     st.subheader('Volcano Plot')
 
     # 기준 수정
-    group = sample_choice[0][:-2] + ' [' + sample_choice[0][-2:] + ']'
-    st.write(f'##### Group: {group}')
+    groups= []
+    
+    for i in range(len(sample_choice)):
+        groups.append(sample_choice[i][:-2] + ' [' + sample_choice[i][-2:] + ']')
+
+    st.write(f'##### {groups[1]} compared to {groups[0]}')
     fig = px.scatter(
         data_frame=df, 
         x='Log2FoldChange', 
@@ -183,7 +187,7 @@ def plot_volcano(sample_choice, p_value_choice, fold_change_choice):
 def show_table(df, sample_choice, txt, deg_type):
     group = format_sample_original(sample_choice)
 
-    st.write(f'##### Log₂ Fold-change {txt}, ({deg_type} in {group[0]})')
+    st.write(f'##### Log₂ Fold-change {txt}, ({deg_type} in {group[1]})')
 
     deg_df = df[df['DEG Group'].isin([deg_type])]
     deg_df = deg_df.drop(columns=['DEG Group'])
@@ -347,6 +351,9 @@ def plot_heatmap(df, sample_choice):
     st.plotly_chart(fig)
 
 def plot_pathway(group1, group2, p_value, fold_change, categories):
+    if not categories:
+        return
+
     base_path = "data/DEG Pathway Enrichment Result/"
     file_suffix = f"{group1}_VS_{group2}_p{p_value}_fc{fold_change}"
 
