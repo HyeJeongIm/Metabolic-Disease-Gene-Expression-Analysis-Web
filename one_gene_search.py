@@ -275,8 +275,10 @@ def show_network_diagram(gene_name, group, threshold):
     with st.spinner('It may takes a few minutes'):
         df_interactions = load_network_data(gene_name)
 
-    if st.button('Apply'):
-        st.session_state['create_network_pressed'] = True
+    _, col2 = st.columns([8, 1])
+    with col2: 
+        if st.button('Apply'):
+            st.session_state['create_network_pressed'] = True
 
     if 'create_network_pressed' in st.session_state and st.session_state['create_network_pressed']:
         with st.spinner('it may takes a few minutes'):
