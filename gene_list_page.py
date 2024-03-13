@@ -1,24 +1,51 @@
 import streamlit as st
 import re 
 import gene_list
+import pandas as pd
 
 def create_header():
     st.title('Multiple Gene Expression')
+    
+def check_gene_names(genes_list, path):
+    # Reading the file
+    df = pd.read_csv(path, delimiter='\t')  
+    all_genes = pd.concat([df['Gene'], df['Gene.1']]).unique()  
+
+    # Checking for mismatches
+    mismatches = [gene for gene in genes_list if gene not in all_genes]
+
+    if mismatches:
+        error_message = f"Gene names not found: {', '.join(mismatches)}"
+        valid_genes = [gene for gene in genes_list if gene not in mismatches]
+    else:
+        error_message = ""
+        valid_genes = genes_list
+
+    return valid_genes, error_message
+
 def create_search_bar():
     base_path = 'data/Gene Expression/Z_Score'
 
     genes_input = st.text_area('Enter gene names:')
     genes_list = re.split('[ ,\t\n]+', genes_input.strip())
 
-    # 빈 문자열인 경우 빈 리스트로 초기화
     if genes_input.strip() == '':
         genes_list = []
+
     st.write(f"Number of genes entered: {len(genes_list)}")
 
     if st.button('Search'):
         st.session_state['pressed'] = True
         st.session_state['gene_list'] = genes_list
         st.session_state['create_network_pressed'] = False
+
+        path = 'data/Gene-Gene Expression Correlation/Correlation Higher Than 0.5/GeneGene_HighCorrelation_Adipose_LH_0.5.txt'
+        valid_genes, error_message = check_gene_names(genes_list, path.replace('\\', '/'))  
+
+        if error_message:
+            st.error(error_message)
+
+        st.session_state['gene_list'] = valid_genes
 
     if 'pressed' in st.session_state and st.session_state['pressed']:
         gene_list.show_heatmap(st.session_state['gene_list'], base_path)
