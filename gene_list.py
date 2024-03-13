@@ -50,10 +50,10 @@ def show_heatmap(genes_list, base_path):
         rows = (total_files + cols - 1) // cols
 
         gene_height = 20
-        max_genes_display = 40  # 최대로 표시할 유전자 수
+        max_genes_display = 40
         if len(genes_list) > max_genes_display:
             heatmap_height = max_genes_display * gene_height
-            show_gene_labels = False  # 유전자 이름 표시 여부
+            show_gene_labels = False
         else:
             heatmap_height = len(genes_list) * gene_height
             show_gene_labels = True
@@ -89,20 +89,19 @@ def show_heatmap(genes_list, base_path):
                         x=heatmap_data.columns.tolist(),
                         y=heatmap_data.index.tolist() if show_gene_labels else [],
                         colorscale=colorscale,
-                        zmin=-3,  # 최소 z값 설정
-                        zmax=3,   # 최대 z값 설정
+                        zmin=-3,
+                        zmax=3,
                         colorbar=dict(
-                            title="[z-score]",  # colorbar 옆에 표시할 텍스트 추가
-
-                            tickvals=[-3, 0, 3],  # colorbar에 표시될 주요 눈금값
-                            ticktext=['-3', '0', '3']  # 눈금에 해당하는 텍스트
-                        ),
+                            title="z-score",
+                            title_side="right",
+                            tickvals=[-3, 0, 3],
+                            ticktext=['-3', '0', '3']
+                        ) if i == len(sorted_files) else None,  # Only add colorbar to last trace
                     ),
                     row=row, col=col
                 )
 
                 if col == 1 and show_gene_labels:
-                    
                     fig.update_yaxes(row=row, col=col)
                 else:
                     fig.update_yaxes(showticklabels=False, row=row, col=col)
@@ -111,12 +110,12 @@ def show_heatmap(genes_list, base_path):
             except KeyError:
                 st.error(f'One or more genes not found in file: {file}')
 
-        extra_space_per_row = 50  # 각 행의 추가 공간. 필요에 따라 조정
+        extra_space_per_row = 50
         total_height = heatmap_height * rows + extra_space_per_row * (rows - 1)
 
         fig.update_layout(
             width=900,
-            height=max(total_height, 600),  # 최소 높이를 보장하면서 전체 높이 조정
+            height=max(total_height, 600),
             title_text='Expression heatmaps',
             showlegend=False,
         )
