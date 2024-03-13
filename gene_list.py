@@ -92,6 +92,8 @@ def show_heatmap(genes_list, base_path):
                         zmin=-3,  # 최소 z값 설정
                         zmax=3,   # 최대 z값 설정
                         colorbar=dict(
+                            title="[z-score]",  # colorbar 옆에 표시할 텍스트 추가
+
                             tickvals=[-3, 0, 3],  # colorbar에 표시될 주요 눈금값
                             ticktext=['-3', '0', '3']  # 눈금에 해당하는 텍스트
                         ),
@@ -207,25 +209,40 @@ def plot_colored_network(df_interactions, df_correlation_filtered, genes_list):
     HtmlFile = open('plot_colored_network.html', 'r', encoding='utf-8')
     source_code = HtmlFile.read() 
     st.components.v1.html(source_code, width=670, height=610)
-        
-def show_network_diagram(genes_list, group, threshold):
+    
+def show_network_diagram(genes_list, group, threshold=0.9):  
     with st.spinner('It may takes few minutes'):
         folder_path = './data/Gene-Gene Interaction/BIOGRID-ORGANISM-Homo_sapiens-4.4.229.tab3.txt'
         data = pd.read_csv(folder_path, sep='\t')
         df_interactions = pd.DataFrame(data)
-    
-    if 'pressed' in st.session_state and st.session_state['pressed'] and not st.session_state.get('initial_network_plotted', False):
-        with st.spinner('It may takes few minutes'):
-            plot_initial_pyvis(df_interactions, genes_list)
-            st.session_state['initial_network_plotted'] = True  
 
-    if 'create_network_pressed' in st.session_state and st.session_state['create_network_pressed']:
+    group_changed = ('selected_group' not in st.session_state or st.session_state['selected_group'] != group)
+    
+    _, col2 = st.columns([8, 1])
+    with col2:
+        apply_clicked = st.button('Apply')
+
+    if apply_clicked:
+        st.session_state['threshold'] = threshold
+
+    if group_changed or not st.session_state.get('initial_network_plotted', False):
+        st.session_state['selected_group'] = group
+        st.session_state['initial_network_plotted'] = True
         with st.spinner('It may takes few minutes'):
-            formatted_group = group_format(group)  
-            df_correlation = load_correlation_data(formatted_group, threshold)
-        show_legend()
+            if group == 'no specific group':
+                plot_initial_pyvis(df_interactions, genes_list)
+            else:
+                formatted_group = group_format(group)
+                df_correlation = load_correlation_data(formatted_group, 0.9)
+                show_legend()
+                plot_colored_network(df_interactions, df_correlation, genes_list)
+
+    elif apply_clicked:
         with st.spinner('It may takes few minutes'):
-            plot_colored_network(df_interactions, df_correlation, genes_list)
+            formatted_group = group_format(group)
+            df_correlation = load_correlation_data(formatted_group, st.session_state['threshold'])
+            show_legend()
+            plot_colored_network(df_interactions, df_correlation, genes_list)      
 
 def group_format(sample_class):
     start_idx = sample_class.find("[")  # "["의 인덱스 찾기
@@ -234,16 +251,3 @@ def group_format(sample_class):
         sample_class = sample_class[:start_idx-1] + '_' + sample_class[start_idx+1:end_idx]
 
     return sample_class
-
-# def str_to_float():
-#     while True:
-#         input_text = st.text_input('Enter threshold of absolute correlation coefficient', value='0.5')
-
-#         if input_text.strip():  # 입력이 비어 있지 않은 경우
-#             if all(char.isdigit() or char == '.' for char in input_text) and input_text.count('.') <= 1:  # 입력이 숫자 또는 소수점으로만 이루어져 있고, 소수점이 하나 이하인 경우
-#                 input_float = float(input_text)
-#                 return input_float
-#             else:
-#                 st.error('Please enter a valid float number')
-#         else:
-#             st.error('Please enter a value')  # 입력이 비어 있는 경우

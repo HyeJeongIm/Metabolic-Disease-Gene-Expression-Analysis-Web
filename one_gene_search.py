@@ -270,27 +270,39 @@ def plot_colored_network(df_interactions, df_correlation, gene_name):
         HtmlFile = open('pyvis_net_graph.html', 'r', encoding='utf-8')
         source_code = HtmlFile.read() 
         st.components.v1.html(source_code, width=670, height=610)
-
-def show_network_diagram(gene_name, group, threshold): 
+        
+def show_network_diagram(gene_name, group, threshold=0.9):  # default_threshold는 기본 임계값을 지정
     with st.spinner('It may takes a few minutes'):
         df_interactions = load_network_data(gene_name)
 
+    group_changed = ('selected_group' not in st.session_state or st.session_state['selected_group'] != group)
+    
     _, col2 = st.columns([8, 1])
-    with col2: 
-        if st.button('Apply'):
-            st.session_state['create_network_pressed'] = True
+    with col2:
+        apply_clicked = st.button('Apply')
 
-    if 'create_network_pressed' in st.session_state and st.session_state['create_network_pressed']:
-        with st.spinner('it may takes a few minutes'):
-            formatted_group = group_format(group)  
-            df_correlation = load_correlation_data(formatted_group, threshold)
-        show_legend()
+    if apply_clicked:
+        st.session_state['threshold'] = threshold
+
+    if group_changed:
+        st.session_state['selected_group'] = group
+        
+        if group == 'no specific group':
+            with st.spinner('It may takes a few minutes'):
+                plot_initial_pyvis(df_interactions, gene_name)
+        else:
+            with st.spinner('It may takes a few minutes'):
+                formatted_group = group_format(group)
+                df_correlation = load_correlation_data(formatted_group, 0.9)
+                show_legend()
+                plot_colored_network(df_interactions, df_correlation, gene_name)
+                
+    elif apply_clicked:
         with st.spinner('It may takes a few minutes'):
-            plot_colored_network(df_interactions, df_correlation, gene_name)
-            st.session_state['create_network_pressed'] = False
-    elif 'create_network_pressed' not in st.session_state:
-        with st.spinner('It may takes a few minutes'):
-            plot_initial_pyvis(df_interactions, gene_name)
+            formatted_group = group_format(group)
+            df_correlation = load_correlation_data(formatted_group, st.session_state['threshold'])
+            show_legend()
+            plot_colored_network(df_interactions, df_correlation, gene_name)       
         
 def group_format(sample_class):
     start_idx = sample_class.find("[")  # "["의 인덱스 찾기
