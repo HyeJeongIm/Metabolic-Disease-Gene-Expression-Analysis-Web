@@ -195,58 +195,60 @@ def write_co_page():
     threshold = str_to_float()
 
     samples = format_sample(selected_groups)
+    _, col2 = st.columns([8, 1])
+    with col2:
+        
+        if st.button('Apply'):
+            st.subheader("Co-expression Network")
 
-    if st.button('Apply'):
-        st.subheader("Co-expression Network")
+            if len(samples) == 1:
+                with st.spinner('it may takes a few minutes'):
+                    group = samples[0]
+                    file_path = os.path.join('data', 'Gene-Gene Expression Correlation', 'Correlation Higher Than 0.5', f'GeneGene_HighCorrelation_{group}_0.5.txt')
+                if os.path.isfile(file_path):
+                    # 다운로드용 데이터프레임
+                    with st.spinner('it may takes a few minutes'):
+                        filtered_df = load_data(file_path, threshold)
+                        filtered_df = filtered_df.rename(columns={'Gene': 'Gene1', 'Gene.1': 'Gene2'})
 
-        if len(samples) == 1:
-            with st.spinner('it may takes a few minutes'):
-                group = samples[0]
-                file_path = os.path.join('data', 'Gene-Gene Expression Correlation', 'Correlation Higher Than 0.5', f'GeneGene_HighCorrelation_{group}_0.5.txt')
-            if os.path.isfile(file_path):
+                    show_legend()
+                    with st.spinner('it may takes a few minutes'):
+                        show_network(file_path, threshold)
+                        download_button(filtered_df)
+                else:
+                    st.error(f"File for {group} does not exist.")
+            elif len(samples) == 2:
                 # 다운로드용 데이터프레임
                 with st.spinner('it may takes a few minutes'):
-                    filtered_df = load_data(file_path, threshold)
-                    filtered_df = filtered_df.rename(columns={'Gene': 'Gene1', 'Gene.1': 'Gene2'})
+                    pathes = []
+                    for i in range(len(samples)):
+                        sample_path = f'./data/Gene-Gene Expression Correlation/Correlation Higher Than 0.5/GeneGene_HighCorrelation_{samples[i]}_0.5.txt'
+                        pathes.append(sample_path)
+                    
+                    df_sample0 = load_data(pathes[0], threshold)
+                    df_sample1 = load_data(pathes[1], threshold)
 
-                show_legend()
-                with st.spinner('it may takes a few minutes'):
-                    show_network(file_path, threshold)
-                    download_button(filtered_df)
-            else:
-                st.error(f"File for {group} does not exist.")
-        elif len(samples) == 2:
-            # 다운로드용 데이터프레임
-            with st.spinner('it may takes a few minutes'):
-                pathes = []
-                for i in range(len(samples)):
-                    sample_path = f'./data/Gene-Gene Expression Correlation/Correlation Higher Than 0.5/GeneGene_HighCorrelation_{samples[i]}_0.5.txt'
-                    pathes.append(sample_path)
-                
-                df_sample0 = load_data(pathes[0], threshold)
-                df_sample1 = load_data(pathes[1], threshold)
+                    merged_df = pd.merge(df_sample0, df_sample1, on=['Gene', 'Gene.1'], how='outer', suffixes=('_Group_A', '_Group_B'))
+                    merged_df.fillna(0, inplace=True)
+                    merged_df = merged_df.rename(columns={'Gene': 'Gene1', 'Gene.1': 'Gene2'})
 
-                merged_df = pd.merge(df_sample0, df_sample1, on=['Gene', 'Gene.1'], how='outer', suffixes=('_Group_A', '_Group_B'))
-                merged_df.fillna(0, inplace=True)
-                merged_df = merged_df.rename(columns={'Gene': 'Gene1', 'Gene.1': 'Gene2'})
-
-            if len(merged_df) > 6170:
-                # (Edges to draw: XXXX, )
-                st.error('''
-                        \n
-                        Sorry, we can\'t draw a network with more than 6170 edges.\n
-                        Please type a higher threshold and try again.\n
-                        Data that needs to be drawn can be downloaded via the Download button.
-                        ''', icon="🚨")
-                download_button(merged_df)
-            else:
-                show_group_legend(samples)
-                with st.spinner('it may takes a few minutes'):
-                    show_combined_network(samples, threshold)
+                if len(merged_df) > 6170:
+                    # (Edges to draw: XXXX, )
+                    st.error('''
+                            \n
+                            Sorry, we can\'t draw a network with more than 6170 edges.\n
+                            Please type a higher threshold and try again.\n
+                            Data that needs to be drawn can be downloaded via the Download button.
+                            ''', icon="🚨")
                     download_button(merged_df)
-                show_df(samples, threshold)
-        else:
-            st.error("Please select one or two groups.")
+                else:
+                    show_group_legend(samples)
+                    with st.spinner('it may takes a few minutes'):
+                        show_combined_network(samples, threshold)
+                        download_button(merged_df)
+                    show_df(samples, threshold)
+            else:
+                st.error("Please select one or two groups.")
 
 def format_sample(sample_choice):
     for key in range(len(sample_choice)):
