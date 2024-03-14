@@ -278,7 +278,7 @@ def show_network_diagram(gene_name, group, threshold=0.9):
         with st.spinner('It may takes a few minutes'):
             formatted_group = group_format(group)
             try:
-                df_correlation = load_correlation_data(formatted_group, threshold)
+                df_correlation = load_correlation_data(formatted_group, threshold[0])
                 show_legend()
                 plot_colored_network(df_interactions, df_correlation, gene_name)
             except FileNotFoundError:
