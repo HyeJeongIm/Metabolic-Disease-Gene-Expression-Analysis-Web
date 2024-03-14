@@ -214,34 +214,20 @@ def show_network_diagram(genes_list, group, threshold=0.9):
         folder_path = './data/Gene-Gene Interaction/BIOGRID-ORGANISM-Homo_sapiens-4.4.229.tab3.txt'
         data = pd.read_csv(folder_path, sep='\t')
         df_interactions = pd.DataFrame(data)
-
-    group_changed = ('selected_group' not in st.session_state or st.session_state['selected_group'] != group)
-    
-    _, col2 = st.columns([8, 1])
-    with col2:
-        apply_clicked = st.button('Apply')
-
-    if apply_clicked:
-        st.session_state['threshold'] = threshold
-
-    if group_changed or not st.session_state.get('initial_network_plotted', False):
-        st.session_state['selected_group'] = group
-        st.session_state['initial_network_plotted'] = True
-        with st.spinner('It may takes few minutes'):
-            if group == 'no specific group':
-                plot_initial_pyvis(df_interactions, genes_list)
-            else:
-                formatted_group = group_format(group)
-                df_correlation = load_correlation_data(formatted_group, 0.9)
+        
+    if group == 'no specific group':
+        with st.spinner('It may takes a few minutes'):
+            plot_initial_pyvis(df_interactions, genes_list)
+    else:
+        with st.spinner('It may takes a few minutes'):
+            formatted_group = group_format(group)
+            try:
+                df_correlation = load_correlation_data(formatted_group, threshold)
                 show_legend()
                 plot_colored_network(df_interactions, df_correlation, genes_list)
-
-    elif apply_clicked:
-        with st.spinner('It may takes few minutes'):
-            formatted_group = group_format(group)
-            df_correlation = load_correlation_data(formatted_group, st.session_state['threshold'])
-            show_legend()
-            plot_colored_network(df_interactions, df_correlation, genes_list)      
+            except FileNotFoundError:
+                st.error(f"No data file found for the group '{group}' with the selected threshold. Please adjust the threshold or choose a different group.")
+   
 
 def group_format(sample_class):
     start_idx = sample_class.find("[")  # "["의 인덱스 찾기
