@@ -78,7 +78,7 @@ def plot_data(combined_df):
     fig.update_layout(showlegend=False)  
     st.plotly_chart(fig, use_container_width=True)
     
-def show_box_plot(name, z_score=False):
+def show_box_plot(name, z_score):
     st.subheader('Box Plot')
 
     st.write("""
@@ -115,21 +115,34 @@ def show_box_plot(name, z_score=False):
     </style>
     """, unsafe_allow_html=True)
 
-    # Markdown을 사용하여 굵은 텍스트로 라벨을 표시
-    st.markdown("**Expression levels in:**")
-
-    # st.radio에서 라벨을 제거하고 옵션만 표시
-    transform = st.radio(
-        "",  # 라벨 부분을 비워둠
+    # # st.radio에서 라벨을 제거하고 옵션만 표시
+    # transform = st.radio(
+    #     "",  # 라벨 부분을 비워둠
+    #     ['RMA-Normalized', 'Z-Score'],
+    #     index=int(st.session_state.get('z_score', False))
+    # )
+    
+    # transform =  st.selectbox(
+    #     "Expression levels in",
+    #     ['RMA-Normalized', 'Z-Score'],
+    #     index=0 if not st.session_state.get('z_score_transform', False) else 1,
+    #     key="data_transformation_selectbox"
+    # )
+    
+    transform = st.selectbox(
+        "Expression levels in",
         ['RMA-Normalized', 'Z-Score'],
-        index=int(st.session_state.get('z_score', False))
+        index=0 if not st.session_state.get('z_score_transform', False) else 1,
+        key="data_transformation_selectbox"
     )
+    st.session_state['z_score_transform'] = transform == 'Z-Score'
+
 
     # 선택된 변환 옵션에 따라 세션 상태를 설정
-    st.session_state['z_score'] = transform == 'Z-Score'
+    # st.session_state['z_score'] = transform == 'Z-Score'
 
     # 데이터 경로 설정
-    folder_path = './data/Gene Expression/' + ('Z_Score' if st.session_state['z_score'] else 'Raw')
+    folder_path = './data/Gene Expression/' + ('Z_Score' if st.session_state['z_score_transform'] else 'Raw')
     
     files = os.listdir(folder_path)
     sorted_files = sorted(files, key=custom_sort_key)
@@ -270,40 +283,80 @@ def plot_colored_network(df_interactions, df_correlation, gene_name):
         HtmlFile = open('pyvis_net_graph.html', 'r', encoding='utf-8')
         source_code = HtmlFile.read() 
         st.components.v1.html(source_code, width=670, height=610)
-        
-def show_network_diagram(gene_name, group, threshold=0.9):  # default_threshold는 기본 임계값을 지정
+
+def show_network_diagram(gene_name, group, threshold=0.9):
     with st.spinner('It may takes a few minutes'):
         df_interactions = load_network_data(gene_name)
 
-    group_changed = ('selected_group' not in st.session_state or st.session_state['selected_group'] != group)
-    
     _, col2 = st.columns([8, 1])
     with col2:
         apply_clicked = st.button('Apply')
 
     if apply_clicked:
         st.session_state['threshold'] = threshold
-
-    if group_changed:
         st.session_state['selected_group'] = group
-        
-        if group == 'no specific group':
-            with st.spinner('It may takes a few minutes'):
-                plot_initial_pyvis(df_interactions, gene_name)
-        else:
-            with st.spinner('It may takes a few minutes'):
-                formatted_group = group_format(group)
-                df_correlation = load_correlation_data(formatted_group, 0.9)
-                show_legend()
-                plot_colored_network(df_interactions, df_correlation, gene_name)
-                
-    elif apply_clicked:
+
+    if group == 'no specific group' and not apply_clicked:
+        # "no specific group"이 선택되었지만 Apply가 클릭되지 않았을 때 초기 네트워크 표시
+        with st.spinner('It may takes a few minutes'):
+            plot_initial_pyvis(df_interactions, gene_name)
+    else:
+        # 특정 그룹이 선택되었거나 Apply 버튼이 클릭되었을 때
         with st.spinner('It may takes a few minutes'):
             formatted_group = group_format(group)
-            df_correlation = load_correlation_data(formatted_group, st.session_state['threshold'])
-            show_legend()
-            plot_colored_network(df_interactions, df_correlation, gene_name)       
+            try:
+                df_correlation = load_correlation_data(formatted_group, st.session_state['threshold'])
+                show_legend()
+                plot_colored_network(df_interactions, df_correlation, gene_name)
+            except FileNotFoundError:
+                if group != 'no specific group':
+                    st.error(f"No data file found for the group '{group}' with the selected threshold. Please adjust the threshold or choose a different group.")
+                else:
+                    plot_initial_pyvis(df_interactions, gene_name)
+
+'''
+    no specific group 일때, Apply 버튼 동작 하지 않는 버전 
+'''
+# def show_network_diagram(gene_name, group, threshold=0.9):  # default_threshold는 기본 임계값을 지정
+#     with st.spinner('It may takes a few minutes'):
+#         df_interactions = load_network_data(gene_name)
+
+#     group_changed = ('selected_group' not in st.session_state or st.session_state['selected_group'] != group)
+    
+#     _, col2 = st.columns([8, 1])
+#     with col2:
+#         apply_clicked = st.button('Apply')
+
+#     if apply_clicked:
+#         st.session_state['threshold'] = threshold
+
+#     if group_changed:
+#         st.session_state['selected_group'] = group
         
+#         if group == 'no specific group':
+#             # "no specific group" 선택 시 plot_initial_pyvis 함수를 호출합니다.
+#             with st.spinner('It may takes a few minutes'):
+#                 plot_initial_pyvis(df_interactions, gene_name)
+#         else:
+#             with st.spinner('It may takes a few minutes'):
+#                 formatted_group = group_format(group)
+#                 try:
+#                     df_correlation = load_correlation_data(formatted_group, threshold)
+#                     show_legend()
+#                     plot_colored_network(df_interactions, df_correlation, gene_name)
+#                 except FileNotFoundError:
+#                     plot_initial_pyvis(df_interactions, gene_name)
+                
+#     elif apply_clicked and group != 'no specific group':
+#         with st.spinner('It may takes a few minutes'):
+#             formatted_group = group_format(group)
+#             try:
+#                 df_correlation = load_correlation_data(formatted_group, st.session_state['threshold'])
+#                 show_legend()
+#                 plot_colored_network(df_interactions, df_correlation, gene_name)
+#             except FileNotFoundError:
+#                 plot_initial_pyvis(df_interactions, gene_name)   
+     
 def group_format(sample_class):
     start_idx = sample_class.find("[")  # "["의 인덱스 찾기
     end_idx = sample_class.find("]")  # "]"의 인덱스 찾기
