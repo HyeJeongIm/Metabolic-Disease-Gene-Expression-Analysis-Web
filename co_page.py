@@ -255,6 +255,9 @@ def write_co_page():
     selected_groups = st.multiselect('Choose one or two sample group for annotation', sample_class, key='sample_input', max_selections=2)
     threshold = str_to_float()
 
+    if threshold is not None and threshold <= 0.4:
+        st.experimental_rerun()
+
     samples = format_sample(selected_groups)
 
     _, col2 = st.columns([8, 1])  
@@ -297,10 +300,17 @@ def write_co_page():
                 df_sample0 = load_data(pathes[0], threshold)
                 df_sample1 = load_data(pathes[1], threshold)
 
-                revert_samples = revert_format_sample(samples)
-                merged_df = pd.merge(df_sample0, df_sample1, on=['Gene', 'Gene.1'], how='outer', suffixes=(f'_{revert_samples[0]}', f'_{revert_samples[1]}'))
+                # merged_df 생성 부분
+                merged_df = pd.merge(df_sample0, df_sample1, on=['Gene', 'Gene.1'], how='outer', suffixes=(f'_{selected_groups[0]}', f'_{selected_groups[1]}'))
                 merged_df.fillna(0, inplace=True)
                 merged_df = merged_df.rename(columns={'Gene': 'Gene1', 'Gene.1': 'Gene2'})
+                
+                # 컬럼 이름 변경 부분
+                for col in merged_df.columns:
+                    if "Correlation coefficient" in col:
+                        new_col_name = col.replace("Correlation coefficient_", "Correlation coefficient ")
+                        new_col_name = new_col_name.replace("_", " [") + "]"
+                        merged_df = merged_df.rename(columns={col: new_col_name})
 
             if len(merged_df) > 6170 and len(merged_df) < 4900000:
                 # (Edges to draw: XXXX, )
@@ -334,14 +344,6 @@ def format_sample(sample_choice):
         end_idx = sample_choice[key].find("]")  # "]"의 인덱스 찾기
         if start_idx != -1 and end_idx != -1:  # "["와 "]"가 모두 존재하는 경우
             sample_choice[key] = sample_choice[key][:start_idx-1] + '_' + sample_choice[key][start_idx+1:end_idx]
-    return sample_choice
-
-def revert_format_sample(sample_choice):
-    for key in range(len(sample_choice)):
-        under_idx = sample_choice[key].find("_")  # "_"의 인덱스 찾기
-        if under_idx != -1:  # "_"가 존재하는 경우
-            # "_" 앞뒤로 텍스트를 분리하고, 각각 "["와 "]"로 감싼 후 다시 합치기
-            sample_choice[key] = sample_choice[key][:under_idx] + '[' + sample_choice[key][under_idx+1:] + ']'
     return sample_choice
 
 # 데이터프레임 다운로드 함수
