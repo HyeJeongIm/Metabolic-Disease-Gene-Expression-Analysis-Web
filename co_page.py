@@ -253,87 +253,93 @@ def write_co_page():
                     'Liver [LH]', 'Liver [OH]', 'Liver [OD]',
                     'Muscle [LH]', 'Muscle [OH]', 'Muscle [OD]']
     selected_groups = st.multiselect('Choose one or two sample group for annotation', sample_class, key='sample_input', max_selections=2)
-    threshold = str_to_float()
-    
+    # threshold = str_to_float()
+
+    threshold_str = st.text_input('Enter threshold of absolute correlation coefficient (minimum: 0.5)', value=0.5, key='co_threshold')
+
     samples = format_sample(selected_groups)
 
-    _, col2 = st.columns([8, 1])  
-
+    # Apply 버튼은 항상 표시
+    _, col2 = st.columns([8, 1])
     with col2:
-        if st.button('Apply'):  # "Apply" 버튼을 오른쪽 컬럼에 배치
-            apply_button = True
+        apply_clicked = st.button('Apply')
+
+    try:
+        threshold = float(threshold_str)
+        if threshold < 0.5:
+            st.error('Please try a higher correlation threshold.')
+        elif apply_clicked:    
+            show_correlation(samples, threshold)
+    except ValueError:
+        st.error('Please enter a valid float number.')    
+        
+
+def show_correlation(samples, threshold):
+    st.subheader("Co-expression Network")  
+
+    if len(samples) == 1:
+        with st.spinner('it may takes a few minutes'):
+            group = samples[0]
+            file_path = os.path.join('data', 'Gene-Gene Expression Correlation', 'Correlation Higher Than 0.5', f'GeneGene_HighCorrelation_{group}_0.5.txt')
+        if os.path.isfile(file_path):
+            with st.spinner('it may takes a few minutes'):
+                filtered_df = load_data(file_path, threshold)
+                filtered_df = filtered_df.rename(columns={'Gene': 'Gene1', 'Gene.1': 'Gene2'})
+
+            show_legend()
+            with st.spinner('it may takes a few minutes'):
+                show_network(file_path, threshold)
+                download_button(filtered_df)
         else:
-            apply_button = False
+            st.error(f"File for {group} does not exist.")
+            
+    elif len(samples) == 2:
+        with st.spinner('it may takes a few minutes'):
+            pathes = []
+            for i in range(len(samples)):
+                sample_path = f'./data/Gene-Gene Expression Correlation/Correlation Higher Than 0.5/GeneGene_HighCorrelation_{samples[i]}_0.5.txt'
+                pathes.append(sample_path)
+            
+            df_sample0 = load_data(pathes[0], threshold)
+            df_sample1 = load_data(pathes[1], threshold)
 
-    if threshold is None:
-        return
+            # merged_df 생성 부분
+            merged_df = pd.merge(df_sample0, df_sample1, on=['Gene', 'Gene.1'], how='outer', suffixes=(f'_{samples[0]}', f'_{samples[1]}'))
+            merged_df.fillna(0, inplace=True)
+            merged_df = merged_df.rename(columns={'Gene': 'Gene1', 'Gene.1': 'Gene2'})
+            
+            # 컬럼 이름 변경 부분
+            for col in merged_df.columns:
+                if "Correlation coefficient" in col:
+                    new_col_name = col.replace("Correlation coefficient_", "Correlation coefficient ")
+                    new_col_name = new_col_name.replace("_", " [") + "]"
+                    merged_df = merged_df.rename(columns={col: new_col_name})
 
-    if apply_button:
-        st.subheader("Co-expression Network")  
-
-        if len(samples) == 1:
+        if len(merged_df) > 6170 and len(merged_df) < 4900000:
+            # (Edges to draw: XXXX, )
+            st.error(f'''
+                    \n
+                    Sorry, we can\'t draw a network with more than 6,170 edges. (Edges to draw: {format(len(merged_df), ',')})\n
+                    Please try a higher correlation threshold.\n
+                    Data that needs to be drawn can be downloaded via the Download button. \n
+                    ''', icon="🚨")
+            st.markdown("""<br>""" * 2, unsafe_allow_html=True)
+            download_button(merged_df)
+        elif len(merged_df) > 4900000:
+            st.error(f'''
+                    \n
+                    Sorry, we can\'t draw a network with more than 6,170 edges. (Edges to draw: {format(len(merged_df), ',')})\n
+                    Also, we can't make data file with more than 4,900,000 edges.\n
+                    Please try a higher correlation threshold.\n
+                    ''', icon="🚨")
+        else:
+            show_group_legend(samples)
             with st.spinner('it may takes a few minutes'):
-                group = samples[0]
-                file_path = os.path.join('data', 'Gene-Gene Expression Correlation', 'Correlation Higher Than 0.5', f'GeneGene_HighCorrelation_{group}_0.5.txt')
-            if os.path.isfile(file_path):
-                with st.spinner('it may takes a few minutes'):
-                    filtered_df = load_data(file_path, threshold)
-                    filtered_df = filtered_df.rename(columns={'Gene': 'Gene1', 'Gene.1': 'Gene2'})
-
-                show_legend()
-                with st.spinner('it may takes a few minutes'):
-                    show_network(file_path, threshold)
-                    download_button(filtered_df)
-            else:
-                st.error(f"File for {group} does not exist.")
-                
-        elif len(samples) == 2:
-            with st.spinner('it may takes a few minutes'):
-                pathes = []
-                for i in range(len(samples)):
-                    sample_path = f'./data/Gene-Gene Expression Correlation/Correlation Higher Than 0.5/GeneGene_HighCorrelation_{samples[i]}_0.5.txt'
-                    pathes.append(sample_path)
-                
-                df_sample0 = load_data(pathes[0], threshold)
-                df_sample1 = load_data(pathes[1], threshold)
-
-                # merged_df 생성 부분
-                merged_df = pd.merge(df_sample0, df_sample1, on=['Gene', 'Gene.1'], how='outer', suffixes=(f'_{selected_groups[0]}', f'_{selected_groups[1]}'))
-                merged_df.fillna(0, inplace=True)
-                merged_df = merged_df.rename(columns={'Gene': 'Gene1', 'Gene.1': 'Gene2'})
-                
-                # 컬럼 이름 변경 부분
-                for col in merged_df.columns:
-                    if "Correlation coefficient" in col:
-                        new_col_name = col.replace("Correlation coefficient_", "Correlation coefficient ")
-                        new_col_name = new_col_name.replace("_", " [") + "]"
-                        merged_df = merged_df.rename(columns={col: new_col_name})
-
-            if len(merged_df) > 6170 and len(merged_df) < 4900000:
-                # (Edges to draw: XXXX, )
-                st.error(f'''
-                        \n
-                        Sorry, we can\'t draw a network with more than 6,170 edges. (Edges to draw: {format(len(merged_df), ',')})\n
-                        Please try a higher correlation threshold.\n
-                        Data that needs to be drawn can be downloaded via the Download button. \n
-                        ''', icon="🚨")
-                st.markdown("""<br>""" * 2, unsafe_allow_html=True)
+                show_combined_network(samples, threshold)
                 download_button(merged_df)
-            elif len(merged_df) > 4900000:
-                st.error(f'''
-                        \n
-                        Sorry, we can\'t draw a network with more than 6,170 edges. (Edges to draw: {format(len(merged_df), ',')})\n
-                        Also, we can't make data file with more than 4,900,000 edges.\n
-                        Please try a higher correlation threshold.\n
-                        ''', icon="🚨")
-            else:
-                show_group_legend(samples)
-                with st.spinner('it may takes a few minutes'):
-                    show_combined_network(samples, threshold)
-                    download_button(merged_df)
-                show_df(samples, threshold)
-        else:
-            st.error("Please select one or two groups.")
+            show_df(samples, threshold)
+    else:
+        st.error("Please select one or two groups.")        
             
 def format_sample(sample_choice):
     for key in range(len(sample_choice)):
@@ -353,22 +359,3 @@ def download_button(df):
     b64 = base64.b64encode(csv.encode()).decode()  # CSV를 base64로 변환
     href = f'<a href="data:file/csv;base64,{b64}" download="data.csv" style="float: right; position: relative; top: -50px;"><button style="background-color: #FF4B4B; border: none; color: white; padding: 10px 12px; text-align: center; text-decoration: none; display: inline-block; font-size: 16px; margin: 4px 2px; cursor: pointer; border-radius: 12px;">Download CSV File</button></a>'
     st.markdown(href, unsafe_allow_html=True)
-
-def str_to_float():
-    while True:
-        input_text = st.text_input('Enter threshold of absolute correlation coefficient (minimum: 0.5)', value='0.5', key='co_threshold')
-
-        if input_text.strip():  # 입력이 비어 있지 않은 경우
-            if all(char.isdigit() or char == '.' for char in input_text) and input_text.count('.') <= 1:  # 입력이 숫자 또는 소수점으로만 이루어져 있고, 소수점이 하나 이하인 경우
-                input_float = float(input_text)
-
-                if input_float < 0.5:
-                    st.error('Please try a higher correlation threshold.')
-                    return None
-                return input_float
-            else:
-                st.error('Please enter a valid float number')
-                return None
-        else:
-            st.error('Please enter a value')  # 입력이 비어 있는 경우
-            return None
