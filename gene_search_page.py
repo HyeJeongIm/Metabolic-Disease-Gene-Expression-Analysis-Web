@@ -1,6 +1,6 @@
 import streamlit as st
 import one_gene_search
-
+import pandas as pd
 def create_header():
     st.image('images/logo.png', width=100)
     st.title('One Gene Search')
@@ -38,6 +38,18 @@ v0
     맨 아래 back button 생성
     이전페이지로 넘어감
 '''
+def check_gene_name(gene_name, path):
+    df = pd.read_csv(path, sep='\t') 
+    # Assuming 'Gene name' is the column title, adjust if it's named differently
+    if gene_name in df['Gene name'].values:
+        error_message = ""
+        valid_gene = gene_name
+    else:
+        error_message = f"Gene name not found: {gene_name}"
+        valid_gene = gene_name
+        
+    return valid_gene, error_message
+
 def create_search_bar():
     if 'search_pressed' not in st.session_state:
         st.session_state['search_pressed'] = False
@@ -53,34 +65,37 @@ def create_search_bar():
             st.session_state['gene_name'] = gene_name  
             st.experimental_rerun()
     else:
-        # 'Search'가 수행된 후의 로직
-        
-        # box plot
-        one_gene_search.show_box_plot(st.session_state['gene_name'], z_score=False)
-        st.subheader(f"**Protein interactions around '{st.session_state['gene_name']}'**")
-
-        # threshold 및 group 선택
-        sample_class = ['no specific group', 'Adipose [LH]', 'Adipose [OH]', 'Adipose [OD]',
-                        'Liver [LH]', 'Liver [OH]', 'Liver [OD]',
-                        'Muscle [LH]', 'Muscle [OH]', 'Muscle [OD]']
-        group = st.selectbox('Choose a sample group for annotation', sample_class, key='group', index=0)
-
-        if 'threshold' not in st.session_state:
-            st.session_state['threshold'] = 0.9  # 기본 임계값으로 0.9를 설정
-            
-        valid_threshold = get_threshold()
-        
-        # Apply 버튼은 항상 표시
-        _, col2 = st.columns([8, 1])
-        with col2:
-            apply_clicked = st.button('Apply')
-
-        if valid_threshold is not None:
-            one_gene_search.show_network_diagram(st.session_state['gene_name'], group, valid_threshold)
+        path = 'data/Gene Expression/Raw/GeneExpression_Adipose_LH.txt'
+        _, error_message = check_gene_name(st.session_state['gene_name'], path)
+        if len(error_message) != 0:
+            st.error(error_message)
         else:
-            return 
+            # box plot
+            one_gene_search.show_box_plot(st.session_state['gene_name'], z_score=False)
+            st.subheader(f"**Protein interactions around '{st.session_state['gene_name']}'**")
 
-        # one_gene_search.show_network_diagram(st.session_state['gene_name'], group, st.session_state['threshold'])
+            # threshold 및 group 선택
+            sample_class = ['no specific group', 'Adipose [LH]', 'Adipose [OH]', 'Adipose [OD]',
+                            'Liver [LH]', 'Liver [OH]', 'Liver [OD]',
+                            'Muscle [LH]', 'Muscle [OH]', 'Muscle [OD]']
+            group = st.selectbox('Choose a sample group for annotation', sample_class, key='group', index=0)
+
+            if 'threshold' not in st.session_state:
+                st.session_state['threshold'] = 0.9  # 기본 임계값으로 0.9를 설정
+                
+            valid_threshold = get_threshold()
+            
+            # Apply 버튼은 항상 표시
+            _, col2 = st.columns([8, 1])
+            with col2:
+                apply_clicked = st.button('Apply')
+
+            if valid_threshold is not None:
+                one_gene_search.show_network_diagram(st.session_state['gene_name'], group, valid_threshold)
+            else:
+                return 
+
+            # one_gene_search.show_network_diagram(st.session_state['gene_name'], group, st.session_state['threshold'])
 
         if st.button('Back'):
             st.session_state['search_pressed'] = False
