@@ -85,17 +85,16 @@ def create_search_bar():
             if 'threshold' not in st.session_state:
                 st.session_state['threshold'] = 0.9  # 기본 임계값으로 0.9를 설정
                 
-            valid_threshold = get_threshold(threshold_key)
+            valid_threshold = get_threshold(threshold_key, group)
             
             # Apply 버튼은 항상 표시
             _, col2 = st.columns([8, 1])
             with col2:
                 apply_clicked = st.button('Apply')
 
-            if valid_threshold is not None:
-                one_gene_search.show_network_diagram(st.session_state['gene_name'], group, valid_threshold)
-            else:
-                return 
+            if len(valid_threshold) == 2:
+                if valid_threshold is not None:
+                    one_gene_search.show_network_diagram(st.session_state['gene_name'], group, valid_threshold)
 
             # one_gene_search.show_network_diagram(st.session_state['gene_name'], group, st.session_state['threshold'])
 
@@ -118,24 +117,23 @@ def create_search_bar():
 #         st.error('Please enter a valid float number.')
 #         return None  
 
-def get_threshold(threshold_key):
+def get_threshold(threshold_key, group):
     default_threshold = 0.9
-
     if threshold_key not in st.session_state:
         st.session_state[threshold_key] = default_threshold
-
-    threshold_str = st.text_input('Enter threshold of absolute correlation coefficient (minimum: 0.5)', value=str(st.session_state.get('threshold', 0.9)), key='gene_threshold')
+    threshold_str = st.text_input('Enter threshold of absolute correlation coefficient (minimum: 0.5)', value=str(st.session_state.get('threshold', 0.9)), key='co_threshold')
     try:
         threshold = float(threshold_str)
-        if threshold < 0.5:
+        if threshold < 0.5 and group =='no specific group':
+            return [threshold, group]
+        elif threshold < 0.5:
             st.error('Please try a higher correlation threshold.')
-            return None
+            return 'None'
         else:
-            st.session_state[threshold_key] = threshold
-            return threshold
+            return [threshold, group]  
     except ValueError:
         st.error('Please enter a valid float number.')
-        return None
+        return None 
 
 '''
     v1-1
