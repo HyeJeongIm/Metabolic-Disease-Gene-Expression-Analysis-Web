@@ -4,10 +4,7 @@ import one_gene_search
 def create_header():
     st.image('images/logo.png', width=100)
     st.title('One Gene Search')
-
-'''
-    test
-'''
+    
 
 '''
 v0
@@ -41,10 +38,7 @@ v0
     맨 아래 back button 생성
     이전페이지로 넘어감
 '''
-
-
 def create_search_bar():
-
     if 'search_pressed' not in st.session_state:
         st.session_state['search_pressed'] = False
         
@@ -70,16 +64,98 @@ def create_search_bar():
                         'Liver [LH]', 'Liver [OH]', 'Liver [OD]',
                         'Muscle [LH]', 'Muscle [OH]', 'Muscle [OD]']
         group = st.selectbox('Choose a sample group for annotation', sample_class, key='group', index=0)
-        threshold = str_to_float(default=0.9)
 
-        one_gene_search.show_network_diagram(st.session_state['gene_name'], group, threshold)
+        if 'threshold' not in st.session_state:
+            st.session_state['threshold'] = 0.9  # 기본 임계값으로 0.9를 설정
+            
+        valid_threshold = get_threshold()
+        
+        # Apply 버튼은 항상 표시
+        _, col2 = st.columns([8, 1])
+        with col2:
+            apply_clicked = st.button('Apply')
+
+        if valid_threshold is not None:
+            one_gene_search.show_network_diagram(st.session_state['gene_name'], group, valid_threshold)
+        else:
+            return 
+
+        # one_gene_search.show_network_diagram(st.session_state['gene_name'], group, st.session_state['threshold'])
 
         if st.button('Back'):
             st.session_state['search_pressed'] = False
             st.session_state['gene_name'] = ""  
             st.experimental_rerun()
 
+def get_threshold():
+    threshold_str = st.text_input('Enter threshold of absolute correlation coefficient (minimum: 0.5)', value=str(st.session_state.get('threshold', 0.9)), key='co_threshold')
+    try:
+        threshold = float(threshold_str)
+        if threshold < 0.5:
+            st.error('Please try a higher correlation threshold.')
+            return None  
+        else:
+            st.session_state['threshold'] = threshold  
+            return threshold  
+    except ValueError:
+        st.error('Please enter a valid float number.')
+        return None  
 
+'''
+    v1-1
+        threshold 0.4 일때 그래프 안그려지도록 해야함 
+'''
+# def create_search_bar():
+#     if 'search_pressed' not in st.session_state:
+#         st.session_state['search_pressed'] = False
+        
+#     # 'gene_name'을 관리하기 위한 session_state 초기화
+#     if 'gene_name' not in st.session_state:
+#         st.session_state['gene_name'] = ""
+        
+#     if not st.session_state['search_pressed']:
+#         gene_name = st.text_input('Enter the gene name', value=st.session_state['gene_name'], key="gene_input")
+#         if st.button('Search'):
+#             st.session_state['search_pressed'] = True
+#             st.session_state['gene_name'] = gene_name  
+#             st.experimental_rerun()
+#     else:
+#         # 'Search'가 수행된 후의 로직
+        
+#         # box plot
+#         one_gene_search.show_box_plot(st.session_state['gene_name'], z_score=False)
+#         st.subheader(f"**Protein interactions around '{st.session_state['gene_name']}'**")
+
+#         # threshold 및 group 선택
+#         sample_class = ['no specific group', 'Adipose [LH]', 'Adipose [OH]', 'Adipose [OD]',
+#                         'Liver [LH]', 'Liver [OH]', 'Liver [OD]',
+#                         'Muscle [LH]', 'Muscle [OH]', 'Muscle [OD]']
+#         group = st.selectbox('Choose a sample group for annotation', sample_class, key='group', index=0)
+        
+#         if 'threshold' not in st.session_state:
+#             st.session_state['threshold'] = 0.9  # 기본 임계값으로 0.9를 설정
+#         threshold = get_threshold()
+
+#         if threshold is None:
+#             return
+#         one_gene_search.show_network_diagram(st.session_state['gene_name'], group, st.session_state['threshold'])
+
+#         if st.button('Back'):
+#             st.session_state['search_pressed'] = False
+#             st.session_state['gene_name'] = ""  
+#             st.experimental_rerun()
+
+# def str_to_float(default=0.9):
+#     threshold_str = st.text_input('Enter threshold of absolute correlation coefficient (minimum: 0.5)', value=str(default))
+#     try:
+#         threshold = float(threshold_str)
+#         if threshold < 0.5:
+#             st.error("Please try a higher correlation threshold. 0.5 이상의 값을 입력해주세요.")
+#             exit()
+#         return threshold
+#     except ValueError:
+#         st.error("Please enter a valid float number. 유효한 실수 값을 입력해주세요.")
+#         return None
 '''
  v2
     search -> back으로 변경
@@ -122,14 +198,38 @@ def create_search_bar():
 #         threshold = str_to_float(default=0.9)  # 이 함수의 정의가 누락되어 있어 가정한 함수명
 #         one_gene_search.show_network_diagram(st.session_state['gene_name'], group, threshold)
 
-        
-def str_to_float(default=0.9):
-    threshold_str = st.text_input('Enter threshold value', value=str(default))
-    try:
-        return float(threshold_str)
-    except ValueError:
-        st.error("Please enter a valid float number for the threshold.")
-        return default       
+
+# def get_threshold():
+#     threshold_str = st.text_input('Enter threshold of absolute correlation coefficient (minimum: 0.5)', value=str(st.session_state.get('threshold', 0.9)), key='co_threshold')
+#     try:
+#         threshold = float(threshold_str)
+#         if threshold < 0.5:
+#             st.error('Please try a higher correlation threshold.')
+#             return None  # 유효하지 않은 경우 None을 반환합니다.
+#         else:
+#             st.session_state['threshold'] = threshold  # 유효한 값을 st.session_state에 저장합니다.
+#             return threshold  # 유효한 threshold 값 반환
+#     except ValueError:
+#         st.error('Please enter a valid float number.')
+#         return None  # 변환에 실패한 경우 None을 반환합니다.
+# # 기존의 str_to_float 함수를 사용하지 않고, 직접 threshold 값을 처리하는 방식
+# def get_threshold(default=0.9):
+#     threshold_str = st.text_input('Enter threshold of absolute correlation coefficient (minimum: 0.5)', value=str(st.session_state['threshold']), key='co_threshold')
+#     try:
+#         threshold = float(threshold_str)
+#         if threshold < 0.5:
+#             st.error('Please try a higher correlation threshold.')
+#         else:
+#             st.session_state['threshold'] = threshold  # 유효한 값을 st.session_state에 저장
+#     except ValueError:
+#         st.error('Please enter a valid float number.') 
+# def str_to_float(default=0.9):
+#     threshold_str = st.text_input('Enter threshold value', value=str(default))
+#     try:
+#         return float(threshold_str)
+#     except ValueError:
+#         st.error("Please enter a valid float number for the threshold.")
+#         return default       
     
 def write_main_page():
     create_header()

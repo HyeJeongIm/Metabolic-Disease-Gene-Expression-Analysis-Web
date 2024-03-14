@@ -283,36 +283,26 @@ def plot_colored_network(df_interactions, df_correlation, gene_name):
         HtmlFile = open('pyvis_net_graph.html', 'r', encoding='utf-8')
         source_code = HtmlFile.read() 
         st.components.v1.html(source_code, width=670, height=610)
-
+'''
+    v1
+'''        
 def show_network_diagram(gene_name, group, threshold=0.9):
     with st.spinner('It may takes a few minutes'):
-        df_interactions = load_network_data(gene_name)
+            df_interactions = load_network_data(gene_name)
 
-    _, col2 = st.columns([8, 1])
-    with col2:
-        apply_clicked = st.button('Apply')
-
-    if apply_clicked:
-        st.session_state['threshold'] = threshold
-        st.session_state['selected_group'] = group
-
-    if group == 'no specific group' and not apply_clicked:
-        # "no specific group"이 선택되었지만 Apply가 클릭되지 않았을 때 초기 네트워크 표시
+    if group == 'no specific group':
         with st.spinner('It may takes a few minutes'):
             plot_initial_pyvis(df_interactions, gene_name)
     else:
-        # 특정 그룹이 선택되었거나 Apply 버튼이 클릭되었을 때
         with st.spinner('It may takes a few minutes'):
             formatted_group = group_format(group)
             try:
-                df_correlation = load_correlation_data(formatted_group, st.session_state['threshold'])
+                df_correlation = load_correlation_data(formatted_group, threshold)
                 show_legend()
                 plot_colored_network(df_interactions, df_correlation, gene_name)
             except FileNotFoundError:
-                if group != 'no specific group':
-                    st.error(f"No data file found for the group '{group}' with the selected threshold. Please adjust the threshold or choose a different group.")
-                else:
-                    plot_initial_pyvis(df_interactions, gene_name)
+                st.error(f"No data file found for the group '{group}' with the selected threshold. Please adjust the threshold or choose a different group.")
+        
 
 '''
     no specific group 일때, Apply 버튼 동작 하지 않는 버전 
