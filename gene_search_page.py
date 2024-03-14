@@ -80,7 +80,7 @@ def create_search_bar():
             sample_class = ['no specific group', 'Adipose [LH]', 'Adipose [OH]', 'Adipose [OD]',
                             'Liver [LH]', 'Liver [OH]', 'Liver [OD]',
                             'Muscle [LH]', 'Muscle [OH]', 'Muscle [OD]']
-            group = st.selectbox('Choose a sample group for annotation', sample_class, key='group', index=0)
+            group = st.selectbox('Choose a sample group for annotation', sample_class, key='group_search', index=0)
 
             if 'threshold' not in st.session_state:
                 st.session_state['threshold'] = 0.9  # 기본 임계값으로 0.9를 설정
