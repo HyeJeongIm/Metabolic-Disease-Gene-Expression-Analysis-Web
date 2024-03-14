@@ -114,35 +114,16 @@ def show_box_plot(name, z_score):
         }
     </style>
     """, unsafe_allow_html=True)
-
-    # # st.radio에서 라벨을 제거하고 옵션만 표시
-    # transform = st.radio(
-    #     "",  # 라벨 부분을 비워둠
-    #     ['RMA-Normalized', 'Z-Score'],
-    #     index=int(st.session_state.get('z_score', False))
-    # )
-    
-    # transform =  st.selectbox(
-    #     "Expression levels in",
-    #     ['RMA-Normalized', 'Z-Score'],
-    #     index=0 if not st.session_state.get('z_score_transform', False) else 1,
-    #     key="data_transformation_selectbox"
-    # )
     
     transform = st.selectbox(
         "Expression levels in",
         ['RMA-Normalized', 'Z-Score'],
-        index=0 if not st.session_state.get('z_score_transform', False) else 1,
+        index=0 if not z_score else 1,  
         key="data_transformation_selectbox"
     )
-    st.session_state['z_score_transform'] = transform == 'Z-Score'
-
-
-    # 선택된 변환 옵션에 따라 세션 상태를 설정
-    # st.session_state['z_score'] = transform == 'Z-Score'
 
     # 데이터 경로 설정
-    folder_path = './data/Gene Expression/' + ('Z_Score' if st.session_state['z_score_transform'] else 'Raw')
+    folder_path = './data/Gene Expression/' + ('Z_Score' if transform == 'Z-Score' else 'Raw')
     
     files = os.listdir(folder_path)
     sorted_files = sorted(files, key=custom_sort_key)
