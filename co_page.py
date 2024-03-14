@@ -254,10 +254,7 @@ def write_co_page():
                     'Muscle [LH]', 'Muscle [OH]', 'Muscle [OD]']
     selected_groups = st.multiselect('Choose one or two sample group for annotation', sample_class, key='sample_input', max_selections=2)
     threshold = str_to_float()
-
-    if threshold is not None and threshold <= 0.4:
-        st.experimental_rerun()
-
+    
     samples = format_sample(selected_groups)
 
     _, col2 = st.columns([8, 1])  
