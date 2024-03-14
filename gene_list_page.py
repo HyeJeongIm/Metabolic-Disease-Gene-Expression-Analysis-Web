@@ -32,6 +32,9 @@ def create_search_bar():
         st.session_state['gene_list'] = []
     # if 'threshold' not in st.session_state:
     #     st.session_state['threshold'] = 0.9
+    threshold_key = 'threshold_gene_list_search'  # gene list 페이지 전용 키
+    default_threshold = 0.9
+
     
     if not st.session_state['pressed']:
         genes_input = st.text_area('Enter gene names:')
@@ -67,8 +70,9 @@ def create_search_bar():
             
             if 'threshold' not in st.session_state:
                 st.session_state['threshold'] = 0.9  # 기본 임계값으로 0.9를 설정
-                
-            valid_threshold = get_threshold(group) 
+            if threshold_key not in st.session_state:
+                st.session_state[threshold_key] = default_threshold    
+            valid_threshold = get_threshold(threshold_key, group) 
 
             _, col2 = st.columns([8, 1])
             with col2:
@@ -83,7 +87,10 @@ def create_search_bar():
             st.session_state['gene_list'] = ""  
             st.experimental_rerun()
             
-def get_threshold(group):
+def get_threshold(threshold_key, group):
+    default_threshold = 0.9
+    if threshold_key not in st.session_state:
+        st.session_state[threshold_key] = default_threshold
     threshold_str = st.text_input('Enter threshold of absolute correlation coefficient (minimum: 0.5)', value=str(st.session_state.get('threshold', 0.9)), key='co_threshold')
     try:
         threshold = float(threshold_str)

@@ -51,6 +51,8 @@ def check_gene_name(gene_name, path):
     return valid_gene, error_message
 
 def create_search_bar():
+    threshold_key = 'threshold_gene_search'
+
     if 'search_pressed' not in st.session_state:
         st.session_state['search_pressed'] = False
         
@@ -83,7 +85,7 @@ def create_search_bar():
             if 'threshold' not in st.session_state:
                 st.session_state['threshold'] = 0.9  # 기본 임계값으로 0.9를 설정
                 
-            valid_threshold = get_threshold()
+            valid_threshold = get_threshold(threshold_key)
             
             # Apply 버튼은 항상 표시
             _, col2 = st.columns([8, 1])
@@ -102,19 +104,38 @@ def create_search_bar():
             st.session_state['gene_name'] = ""  
             st.experimental_rerun()
 
-def get_threshold():
-    threshold_str = st.text_input('Enter threshold of absolute correlation coefficient (minimum: 0.5)', value=str(st.session_state.get('threshold', 0.9)), key='co_threshold')
+# def get_threshold():
+#     threshold_str = st.text_input('Enter threshold of absolute correlation coefficient (minimum: 0.5)', value=str(st.session_state.get('threshold', 0.9)), key='co_threshold')
+#     try:
+#         threshold = float(threshold_str)
+#         if threshold < 0.5:
+#             st.error('Please try a higher correlation threshold.')
+#             return None  
+#         else:
+#             st.session_state['threshold'] = threshold  
+#             return threshold  
+#     except ValueError:
+#         st.error('Please enter a valid float number.')
+#         return None  
+
+def get_threshold(threshold_key):
+    default_threshold = 0.9
+
+    if threshold_key not in st.session_state:
+        st.session_state[threshold_key] = default_threshold
+
+    threshold_str = st.text_input('Enter threshold of absolute correlation coefficient (minimum: 0.5)', value=str(st.session_state.get('threshold', 0.9)), key='gene_threshold')
     try:
         threshold = float(threshold_str)
         if threshold < 0.5:
             st.error('Please try a higher correlation threshold.')
-            return None  
+            return None
         else:
-            st.session_state['threshold'] = threshold  
-            return threshold  
+            st.session_state[threshold_key] = threshold
+            return threshold
     except ValueError:
         st.error('Please enter a valid float number.')
-        return None  
+        return None
 
 '''
     v1-1
