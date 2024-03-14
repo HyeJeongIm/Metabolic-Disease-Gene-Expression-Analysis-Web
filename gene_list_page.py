@@ -98,12 +98,15 @@ def get_threshold(threshold_key, group):
             return [threshold, group]
         elif threshold < 0.5:
             st.error('Please try a higher correlation threshold.')
-            return 'None'
+            return [group]  
         else:
             return [threshold, group]  
     except ValueError:
+        if group == 'no specific group':
+            return [0, group]
         st.error('Please enter a valid float number.')
-        return None 
+        return [group] 
+
 # def get_threshold():
 #     threshold_str = st.text_input('Enter threshold of absolute correlation coefficient (minimum: 0.5)', value=str(st.session_state.get('threshold', 0.9)), key='co_threshold')
 #     try:
