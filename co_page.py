@@ -4,7 +4,6 @@ import base64
 import os
 from pyvis.network import Network
 import streamlit.components.v1 as components
-from one_gene_search import str_to_float
 
 def create_header():
     st.title('Co-expression Network Analysis')
@@ -266,6 +265,9 @@ def write_co_page():
         else:
             apply_button = False
 
+    if threshold is None:
+        return
+
     if apply_button:
         st.subheader("Co-expression Network")  
 
@@ -295,19 +297,28 @@ def write_co_page():
                 df_sample0 = load_data(pathes[0], threshold)
                 df_sample1 = load_data(pathes[1], threshold)
 
-                merged_df = pd.merge(df_sample0, df_sample1, on=['Gene', 'Gene.1'], how='outer', suffixes=('_Group_A', '_Group_B'))
+                revert_samples = revert_format_sample(samples)
+                merged_df = pd.merge(df_sample0, df_sample1, on=['Gene', 'Gene.1'], how='outer', suffixes=(f'_{revert_samples[0]}', f'_{revert_samples[1]}'))
                 merged_df.fillna(0, inplace=True)
                 merged_df = merged_df.rename(columns={'Gene': 'Gene1', 'Gene.1': 'Gene2'})
 
-            if len(merged_df) > 6170:
+            if len(merged_df) > 6170 and len(merged_df) < 4900000:
                 # (Edges to draw: XXXX, )
-                st.error('''
+                st.error(f'''
                         \n
-                        Sorry, we can\'t draw a network with more than 6170 edges.\n
-                        Please type a higher threshold and try again.\n
-                        Data that needs to be drawn can be downloaded via the Download button.
+                        Sorry, we can\'t draw a network with more than 6,170 edges. (Edges to draw: {format(len(merged_df), ',')})\n
+                        Please try a higher correlation threshold.\n
+                        Data that needs to be drawn can be downloaded via the Download button. \n
                         ''', icon="🚨")
+                st.markdown("""<br>""" * 2, unsafe_allow_html=True)
                 download_button(merged_df)
+            elif len(merged_df) > 4900000:
+                st.error(f'''
+                        \n
+                        Sorry, we can\'t draw a network with more than 6,170 edges. (Edges to draw: {format(len(merged_df), ',')})\n
+                        Also, we can't make data file with more than 4,900,000 edges.\n
+                        Please try a higher correlation threshold.\n
+                        ''', icon="🚨")
             else:
                 show_group_legend(samples)
                 with st.spinner('it may takes a few minutes'):
@@ -325,9 +336,40 @@ def format_sample(sample_choice):
             sample_choice[key] = sample_choice[key][:start_idx-1] + '_' + sample_choice[key][start_idx+1:end_idx]
     return sample_choice
 
+def revert_format_sample(sample_choice):
+    for key in range(len(sample_choice)):
+        under_idx = sample_choice[key].find("_")  # "_"의 인덱스 찾기
+        if under_idx != -1:  # "_"가 존재하는 경우
+            # "_" 앞뒤로 텍스트를 분리하고, 각각 "["와 "]"로 감싼 후 다시 합치기
+            sample_choice[key] = sample_choice[key][:under_idx] + '[' + sample_choice[key][under_idx+1:] + ']'
+    return sample_choice
+
 # 데이터프레임 다운로드 함수
+st.cache_data(show_spinner=False)
 def download_button(df):
+    # 데이터 프레임의 모든 원소에 대해 조건을 검사하고 값을 변경
+    df = df.applymap(lambda x: '< 0.5' if x == 0 else x)
+
     csv = df.to_csv(index=False)
     b64 = base64.b64encode(csv.encode()).decode()  # CSV를 base64로 변환
     href = f'<a href="data:file/csv;base64,{b64}" download="data.csv" style="float: right; position: relative; top: -50px;"><button style="background-color: #FF4B4B; border: none; color: white; padding: 10px 12px; text-align: center; text-decoration: none; display: inline-block; font-size: 16px; margin: 4px 2px; cursor: pointer; border-radius: 12px;">Download CSV File</button></a>'
     st.markdown(href, unsafe_allow_html=True)
+
+def str_to_float():
+    while True:
+        input_text = st.text_input('Enter threshold of absolute correlation coefficient (minimum: 0.5)', value='0.5', key='co_threshold')
+
+        if input_text.strip():  # 입력이 비어 있지 않은 경우
+            if all(char.isdigit() or char == '.' for char in input_text) and input_text.count('.') <= 1:  # 입력이 숫자 또는 소수점으로만 이루어져 있고, 소수점이 하나 이하인 경우
+                input_float = float(input_text)
+
+                if input_float < 0.5:
+                    st.error('Please try a higher correlation threshold.')
+                    return None
+                return input_float
+            else:
+                st.error('Please enter a valid float number')
+                return None
+        else:
+            st.error('Please enter a value')  # 입력이 비어 있는 경우
+            return None
