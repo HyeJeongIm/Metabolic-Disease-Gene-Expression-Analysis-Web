@@ -176,7 +176,7 @@ def plot_initial_pyvis(df, gene_name):
         seen_nodes = set()  
 
         unique_edges = df.drop_duplicates(subset=['Official Symbol Interactor A', 'Official Symbol Interactor B'])
-
+        print('unique_edges', len(unique_edges))
         for _, row in unique_edges.iterrows():
             src, dst = row['Official Symbol Interactor A'], row['Official Symbol Interactor B']
 
@@ -282,51 +282,7 @@ def show_network_diagram(gene_name, group, threshold=0.9):
                 show_legend()
                 plot_colored_network(df_interactions, df_correlation, gene_name)
             except FileNotFoundError:
-                st.error(f"No data file found for the group '{group}' with the selected threshold. Please adjust the threshold or choose a different group.")
-        
-
-'''
-    no specific group 일때, Apply 버튼 동작 하지 않는 버전 
-'''
-# def show_network_diagram(gene_name, group, threshold=0.9):  # default_threshold는 기본 임계값을 지정
-#     with st.spinner('It may takes a few minutes'):
-#         df_interactions = load_network_data(gene_name)
-
-#     group_changed = ('selected_group' not in st.session_state or st.session_state['selected_group'] != group)
-    
-#     _, col2 = st.columns([8, 1])
-#     with col2:
-#         apply_clicked = st.button('Apply')
-
-#     if apply_clicked:
-#         st.session_state['threshold'] = threshold
-
-#     if group_changed:
-#         st.session_state['selected_group'] = group
-        
-#         if group == 'no specific group':
-#             # "no specific group" 선택 시 plot_initial_pyvis 함수를 호출합니다.
-#             with st.spinner('It may takes a few minutes'):
-#                 plot_initial_pyvis(df_interactions, gene_name)
-#         else:
-#             with st.spinner('It may takes a few minutes'):
-#                 formatted_group = group_format(group)
-#                 try:
-#                     df_correlation = load_correlation_data(formatted_group, threshold)
-#                     show_legend()
-#                     plot_colored_network(df_interactions, df_correlation, gene_name)
-#                 except FileNotFoundError:
-#                     plot_initial_pyvis(df_interactions, gene_name)
-                
-#     elif apply_clicked and group != 'no specific group':
-#         with st.spinner('It may takes a few minutes'):
-#             formatted_group = group_format(group)
-#             try:
-#                 df_correlation = load_correlation_data(formatted_group, st.session_state['threshold'])
-#                 show_legend()
-#                 plot_colored_network(df_interactions, df_correlation, gene_name)
-#             except FileNotFoundError:
-#                 plot_initial_pyvis(df_interactions, gene_name)   
+                st.error(f"No data file found for the group '{group}' with the selected threshold. Please adjust the threshold or choose a different group.") 
      
 def group_format(sample_class):
     start_idx = sample_class.find("[")  # "["의 인덱스 찾기
@@ -348,128 +304,41 @@ def str_to_float():
                 st.error('Please enter a valid float number')
         else:
             st.error('Please enter a value')  # 입력이 비어 있는 경우
+            
+def load_edge_data(gene_name):
+    file_path = 'data/Gene-Gene Interaction/BIOGRID-ORGANISM-Homo_sapiens-4.4.229.tab3.txt'
+    df = pd.read_csv(file_path, sep='\t')
+    interactions = df[((df['Official Symbol Interactor A'] == gene_name) | 
+                    (df['Official Symbol Interactor B'] == gene_name))][['Official Symbol Interactor A', 'Official Symbol Interactor B', 'Experimental System Type', 'Author', 'Publication Source']]
+    return interactions
 
-# def spinner_state(gene_name):
-#     # 'initial_loading' 키가 없거나 True일 때만 상단에 spinner 표시
-#     if 'initial_loading' not in st.session_state or st.session_state['initial_loading']:
-#         with st.spinner('It may takes few minutes'):
-#             st.session_state['initial_loading'] = False
-#             show_network_diagram(gene_name)
-#     else:
-#         show_network_diagram(gene_name)
+def show_edge_info(gene_name):
+    st.title(f"{gene_name} 유전자 상호작용 정보")
 
-'''
-    v1
-'''
-# def show_network_diagram(gene_name):
+    if 'gene_name' not in st.session_state:
+        st.session_state['gene_name'] = gene_name
+    gene_name_1 = st.selectbox("첫 번째 유전자를 선택하세요.", [st.session_state['gene_name']])
+
+    interactions_1 = load_edge_data(gene_name_1)
+    connected_genes_1 = set(interactions_1['Official Symbol Interactor A']).union(
+        set(interactions_1['Official Symbol Interactor B']))
+    connected_genes_1.discard(gene_name_1)  
+    sorted_connected_genes_1 = sorted(list(connected_genes_1))
+
+    gene_name_2 = st.multiselect("두 번째 유전자(들)를 선택하세요.", sorted_connected_genes_1, key='second_genes')
     
-#     df_interactions = load_network_data(gene_name)
-    
-#     st.subheader(f"**Protein interaction around '{gene_name}'**")
-
-#     # threshold 및 group 선택
-#     sample_class = ['Adipose [LH]', 'Adipose [OH]', 'Adipose [OD]',
-#                     'Liver [LH]', 'Liver [OH]', 'Liver [OD]',
-#                     'Muscle [LH]', 'Muscle [OH]', 'Muscle [OD]']
-#     group = st.selectbox('Choose one group', sample_class, key='sample_input')
-#     threshold = st.number_input('Enter threshold of absolute correlation coefficient:', min_value=0.0, value=0.5, step=0.01)
-#     # 데이터를 찾기 위해서 그룹명 포매팅
-#     formatted_group = group_format(group)
-
-#     # group 및 threshold를 선택하면 그려짐
-#     if st.button('Create Group Network'):
-#         df_correlation = load_correlation_data(formatted_group, threshold)
-#         show_legend()
-#         plot_colored_network(df_interactions, df_correlation, gene_name)
-#     else: 
-#         plot_initial_pyvis(df_interactions, gene_name)
-
-# def group_format(sample_class):
-#     start_idx = sample_class.find("[")  # "["의 인덱스 찾기
-#     end_idx = sample_class.find("]")  # "]"의 인덱스 찾기
-#     if start_idx != -1 and end_idx != -1:  # "["와 "]"가 모두 존재하는 경우
-#         sample_class = sample_class[:start_idx-1] + '_' + sample_class[start_idx+1:end_idx]
-
-#     return sample_class
-
-'''
-    v3 (혹시 몰라서 남겨둠)
-'''
-
-# @st.cache_data(show_spinner=False)
-# def load_network_data(gene_name):
-#     file_path = 'data\Gene-Gene Interaction\BIOGRID-ORGANISM-Homo_sapiens-4.4.229.tab3.txt'
-#     df = pd.read_csv(file_path, sep='\t')
-#     interactions = df[((df['Official Symbol Interactor A'] == gene_name) | 
-#                     (df['Official Symbol Interactor B'] == gene_name))][['Official Symbol Interactor A', 'Official Symbol Interactor B']]
-#     return interactions 
-
-# @st.cache_data(show_spinner=False)
-# def load_correlation_data(group, threshold):
-#     file_path = f'data/Gene-Gene Expression Correlation/Correlation Higher Than 0.5/GeneGene_HighCorrelation_{group}_0.5.txt'
-#     df_correlation = pd.read_csv(file_path, sep='\t')
-#     df_correlation_filtered = df_correlation[df_correlation['Correlation coefficient'].abs() >= threshold]
-#     return df_correlation_filtered  
-
-# def plot_network(df, gene_name, network_type='initial', df_correlation=None):
-#     # 네트워크 그리기 로직
-#     net = Network(notebook=True, directed=False)
-#     seen_nodes = set()
-
-#     for _, row in df.iterrows():
-#         src, dst = row['Official Symbol Interactor A'], row['Official Symbol Interactor B']
-#         color = 'lightgrey'  # 기본 색상
-#         weight = None
+    _, col2 = st.columns([8, 1])
+    with col2:
+        apply_clicked = st.button('Show')
         
-#         for node in [src, dst]:
-#             if node not in seen_nodes:
-#                 net.add_node(node, label=node, title=node, color='Orange' if node == gene_name else 'grey', size=25 if node == gene_name else 15)
-#                 seen_nodes.add(node)
-
-#         edge_color = 'lightgrey'
-#         if network_type == 'correlation' and df_correlation is not None:
-#             correlation_row = df_correlation[((df_correlation['Gene'] == src) & (df_correlation['Gene.1'] == dst)) | 
-#                                              ((df_correlation['Gene'] == dst) & (df_correlation['Gene.1'] == src))]
-#             if not correlation_row.empty:
-#                 correlation = correlation_row.iloc[0]['Correlation coefficient']
-#                 color = 'red' if correlation > 0 else 'blue'
-#                 if color in ['red', 'blue']:
-#                     weight = correlation
-#             # create_network(correlation_row)
-#             # 노드 추가
-#             for node in [src, dst]:
-#                 if node not in seen_nodes:
-#                     node_color = 'orange' if node == gene_name else 'grey'
-#                     net.add_node(node, label=node, title=node, color=node_color, size=15)
-#                     seen_nodes.add(node)
-
-#             # 상관관계에 따라 색상이 지정된 엣지 추가
-#             if weight is not None:
-#                 net.add_edge(src, dst, color=color, value=abs(weight), title=f"{weight}")
-#             else:
-#                 net.add_edge(src, dst, color=color)
-#         else:
-#             net.add_edge(src, dst, color=edge_color)
-
-#     file_name = "correlation_network.html" if network_type == 'correlation' else "initial_network.html"
-#     net.show(file_name)
-#     HtmlFile = open(file_name, 'r', encoding='utf-8')
-#     source_code = HtmlFile.read() 
-#     st.components.v1.html(source_code, width=800, height=630)
-    
-# def show_correlation_network_options(df, gene_name):
-#     sample_class = ['Adipose_LH', 'Adipose_OH', 'Adipose_OD', 'Liver_LH', 'Liver_OH', 'Liver_OD', 'Muscle_LH', 'Muscle_OH', 'Muscle_OD']
-#     group = st.selectbox('Choose sample group', sample_class, key='group')
-#     threshold = st.number_input('Enter threshold of absolute correlation coefficient', min_value=0.0, value=0.5, step=0.01, key='threshold')
-#     if st.button('Show Correlation Network'):
-#         df_correlation = load_correlation_data(group, threshold)
-#         plot_network(df, gene_name, 'correlation', df_correlation)        
-        
-# def show_network_diagram(gene_name):
-#     df_interactions = load_network_data(gene_name)  # Assuming this function is defined elsewhere
-#     if 'create_clicked' not in st.session_state:
-#         plot_network(df_interactions, gene_name)
-#         if st.button('Create Correlation Network'):
-#             st.session_state['create_clicked'] = True
-#     if 'create_clicked' in st.session_state:
-#         show_correlation_network_options(df_interactions, gene_name)
+    if apply_clicked:
+        if len(gene_name_2) > 0:
+            interactions_final = pd.DataFrame()
+            for g in gene_name_2:
+                interactions_2 = interactions_1[((interactions_1['Official Symbol Interactor A'] == g) |
+                                                (interactions_1['Official Symbol Interactor B'] == g))]
+                interactions_final = pd.concat([interactions_final, interactions_2])
+            if not interactions_final.empty:
+                st.write(f"{gene_name_1}와 {', '.join(gene_name_2)} 간의 edge info.:", interactions_final)
+            else:
+                st.write(interactions_final)
