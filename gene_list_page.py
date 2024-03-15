@@ -56,32 +56,32 @@ def create_search_bar():
 
         if error_message:
             st.error(error_message)
-        else:
-            st.session_state['gene_list'] = valid_genes
-                
-            gene_list.show_heatmap(st.session_state['gene_list'], base_path)
-            st.subheader(f"**Protein interactions between input Genes**")
-
-            sample_class = ['no specific group', 'Adipose [LH]', 'Adipose [OH]', 'Adipose [OD]',
-                            'Liver [LH]', 'Liver [OH]', 'Liver [OD]',
-                            'Muscle [LH]', 'Muscle [OH]', 'Muscle [OD]']
-
-            group = st.selectbox('Choose a sample group for annotation', sample_class, key='group', index=0)
+        
+        st.session_state['gene_list'] = valid_genes
             
-            if 'threshold' not in st.session_state:
-                st.session_state['threshold'] = 0.9  # 기본 임계값으로 0.9를 설정
-            if threshold_key not in st.session_state:
-                st.session_state[threshold_key] = default_threshold    
-            valid_threshold = get_threshold(threshold_key, group) 
+        gene_list.show_heatmap(st.session_state['gene_list'], base_path)
+        st.subheader(f"**Protein interactions between input Genes**")
 
-            _, col2 = st.columns([8, 1])
-            with col2:
-                apply_clicked = st.button('Apply')
+        sample_class = ['no specific group', 'Adipose [LH]', 'Adipose [OH]', 'Adipose [OD]',
+                        'Liver [LH]', 'Liver [OH]', 'Liver [OD]',
+                        'Muscle [LH]', 'Muscle [OH]', 'Muscle [OD]']
 
-            if len(valid_threshold) == 2:
-                if valid_threshold[0] is not None:
-                    gene_list.show_network_diagram(st.session_state['gene_list'], valid_threshold[1], valid_threshold[0])
-            
+        group = st.selectbox('Choose a sample group for annotation', sample_class, key='group', index=0)
+        
+        if 'threshold' not in st.session_state:
+            st.session_state['threshold'] = 0.9  # 기본 임계값으로 0.9를 설정
+        if threshold_key not in st.session_state:
+            st.session_state[threshold_key] = default_threshold    
+        valid_threshold = get_threshold(threshold_key, group) 
+
+        _, col2 = st.columns([8, 1])
+        with col2:
+            apply_clicked = st.button('Apply')
+
+        if len(valid_threshold) == 2:
+            if valid_threshold[0] is not None:
+                gene_list.show_network_diagram(st.session_state['gene_list'], valid_threshold[1], valid_threshold[0])
+        
         if st.button('Back'):
             st.session_state['pressed'] = False
             st.session_state['gene_list'] = ""  
