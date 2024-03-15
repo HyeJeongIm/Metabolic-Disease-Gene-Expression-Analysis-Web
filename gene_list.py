@@ -228,7 +228,6 @@ def show_network_diagram(genes_list, group, threshold=0.9):
                 plot_colored_network(df_interactions, df_correlation, genes_list)
             except FileNotFoundError:
                 st.error(f"No data file found for the group '{group}' with the selected threshold. Please adjust the threshold or choose a different group.")
-   
 
 def group_format(sample_class):
     start_idx = sample_class.find("[")  # "["의 인덱스 찾기
