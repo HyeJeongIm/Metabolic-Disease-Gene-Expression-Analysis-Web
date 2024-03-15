@@ -1,9 +1,13 @@
 import streamlit as st
 import one_gene_search
 import pandas as pd
-def create_header():
+import re
+def create_header(gene_name=None):
     st.image('images/logo.png', width=100)
-    st.title('One Gene Search')
+    if gene_name:
+        st.title(f"One Gene Search: '{gene_name}'")
+    else:
+        st.title('One Gene Search')
     
 
 '''
@@ -69,8 +73,10 @@ def create_search_bar():
     else:
         path = 'data/Gene Expression/Raw/GeneExpression_Adipose_LH.txt'
         _, error_message = check_gene_name(st.session_state['gene_name'], path)
+        
         if len(error_message) != 0:
             st.error(error_message)
+            
         else:
             # box plot
             one_gene_search.show_box_plot(st.session_state['gene_name'], z_score=False)
@@ -103,39 +109,30 @@ def create_search_bar():
             st.session_state['gene_name'] = ""  
             st.experimental_rerun()
 
-# def get_threshold():
-#     threshold_str = st.text_input('Enter threshold of absolute correlation coefficient (minimum: 0.5)', value=str(st.session_state.get('threshold', 0.9)), key='co_threshold')
-#     try:
-#         threshold = float(threshold_str)
-#         if threshold < 0.5:
-#             st.error('Please try a higher correlation threshold.')
-#             return None  
-#         else:
-#             st.session_state['threshold'] = threshold  
-#             return threshold  
-#     except ValueError:
-#         st.error('Please enter a valid float number.')
-#         return None  
-
 def get_threshold(threshold_key, group):
     default_threshold = 0.9
     if threshold_key not in st.session_state:
         st.session_state[threshold_key] = default_threshold
     threshold_str = st.text_input('Enter threshold of absolute correlation coefficient (minimum: 0.5)', value=str(st.session_state.get('threshold', 0.9)), key='co_threshold')
-    try:
-        threshold = float(threshold_str)
-        if threshold < 0.5 and group =='no specific group':
-            return [threshold, group]
-        elif threshold < 0.5:
-            st.error('Please try a higher correlation threshold.')
-            return [group]  
-        else:
-            return [threshold, group]  
-    except ValueError:
-        if group == 'no specific group':
-            return [0, group]
-        st.error('Please enter a valid float number.')
-        return [group] 
+    if not re.match(r'^\d+(\.\d{1,2})?$', threshold_str):
+        st.error('Please enter a valid float number in x.xx format.')
+        return [group]
+    else:
+        try:
+            threshold = float(threshold_str)
+
+            if threshold < 0.5 and group =='no specific group':
+                return [threshold, group]
+            elif threshold < 0.5:
+                st.error('Please try a higher correlation threshold.')
+                return [group]  
+            else:
+                return [threshold, group]  
+        except ValueError:
+            if group == 'no specific group':
+                return [0, group]
+            st.error('Please enter a valid float number.')
+            return [group] 
 
 '''
     v1-1
@@ -268,5 +265,8 @@ def get_threshold(threshold_key, group):
 #         return default       
     
 def write_main_page():
-    create_header()
+    if 'search_pressed' in st.session_state and st.session_state['search_pressed']:
+        create_header(st.session_state['gene_name'])
+    else:
+        create_header()
     create_search_bar()
