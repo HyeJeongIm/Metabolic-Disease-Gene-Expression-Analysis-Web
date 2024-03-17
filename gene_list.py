@@ -8,6 +8,8 @@ import streamlit.components.v1 as components
 from itertools import combinations 
 from one_gene_search import custom_sort_key
 from one_gene_search import group_format
+import requests
+from bs4 import BeautifulSoup
 
 '''
     heatmap
@@ -209,9 +211,14 @@ def plot_colored_network(df_interactions, df_correlation_filtered, genes_list):
     HtmlFile = open('plot_colored_network.html', 'r', encoding='utf-8')
     source_code = HtmlFile.read() 
     st.components.v1.html(source_code, width=670, height=610)
+
+    if 'node' not in st.session_state:
+        st.session_state['node'] = net.get_nodes()
+    if 'edge' not in st.session_state:
+        st.session_state['edge'] = net.get_edges()    
     
 def show_network_diagram(genes_list, group, threshold=0.9):  
-    with st.spinner('It may takes few minutes'):
+    with st.spinner('It may takes a few minutes'):
         folder_path = './data/Gene-Gene Interaction/BIOGRID-ORGANISM-Homo_sapiens-4.4.229.tab3.txt'
         data = pd.read_csv(folder_path, sep='\t')
         df_interactions = pd.DataFrame(data)
@@ -236,3 +243,76 @@ def group_format(sample_class):
         sample_class = sample_class[:start_idx-1] + '_' + sample_class[start_idx+1:end_idx]
 
     return sample_class
+
+def load_edge_data(gene_name,  gene_list):
+    file_path = './data/Gene-Gene Interaction/BIOGRID-ORGANISM-Homo_sapiens-4.4.229.tab3.txt'
+    df = pd.read_csv(file_path, sep='\t')
+    
+    # 관계가 있는 유전자들만 필터링
+    related_genes = set([gene_name] + gene_list)
+    interactions = df[((df['Official Symbol Interactor A'] == gene_name) & df['Official Symbol Interactor B'].isin(gene_list)) |
+                 ((df['Official Symbol Interactor B'] == gene_name) & df['Official Symbol Interactor A'].isin(gene_list))]
+    interactions = interactions.drop_duplicates()
+    
+    base_url = 'https://pubmed.ncbi.nlm.nih.gov/'
+    interactions['Publication Source Number'] = base_url + interactions['Publication Source'].str.replace('PUBMED:', '') + '/'
+    
+    interactions = interactions[['Official Symbol Interactor A', 'Official Symbol Interactor B', 'Experimental System Type', 'Author', 'Publication Source', 'Publication Source Number']]
+
+    return interactions
+
+def show_edge_info(gene_list):
+    st.subheader(f"**Identification of genes associated with '{st.session_state['gene_list']}'**")
+
+    gene_list_1 = st.selectbox("", st.session_state['node'])
+    edge = st.session_state['edge']
+
+    opposite_genes = []
+    for interaction in edge:
+        if interaction['from'] == gene_list_1:
+            opposite_genes.append(interaction['to'])
+        elif interaction['to'] == gene_list_1:
+            opposite_genes.append(interaction['from'])
+    opposite_genes.sort()
+
+    interactions_1 = load_edge_data(gene_list_1, opposite_genes)
+    # connected_genes_1 = set(interactions_1['Official Symbol Interactor A']).union(
+    #     set(interactions_1['Official Symbol Interactor B']))  
+
+    gene_list_2 = st.multiselect("Choose the gene name which you want to see information", opposite_genes, key='second_gene_list')
+    
+    _, col2 = st.columns([8, 1])
+    with col2:
+        apply_clicked = st.button('Show')
+        
+    if apply_clicked:
+        if len(gene_list_2) > 0:
+            interactions_final = pd.DataFrame()
+            for g in gene_list_2:
+                interactions_2 = interactions_1[((interactions_1['Official Symbol Interactor A'] == g) |
+                                                (interactions_1['Official Symbol Interactor B'] == g))]
+                interactions_final = pd.concat([interactions_final, interactions_2])
+                interactions_final['Link Title'] = interactions_final['Publication Source Number'].apply(get_link_title)
+            if not interactions_final.empty:
+                st.write(f"{gene_list_1}와 {', '.join(gene_list_2)} interaction edge information:")
+                st.dataframe(
+                    interactions_final,
+                    hide_index=True,
+                    column_config={
+                        'Publication Source Number' : st.column_config.LinkColumn(display_text='🔗')
+                    }
+                )
+            else:
+                st.write(interactions_final)
+
+def get_link_title(url):
+    try:
+        response = requests.get(url)
+        if response.status_code == 200:
+            soup = BeautifulSoup(response.text, 'html.parser')
+            title = soup.title.string
+            title = title.replace('- PubMed', '')
+            return title
+    except Exception as e:
+        print(f'Error fetching title for link {url}: {str(e)}')
+    return None
