@@ -4,6 +4,8 @@ from pyvis.network import Network
 import streamlit.components.v1 as components
 import streamlit as st
 import os
+import requests
+from bs4 import BeautifulSoup
 
 #### node도 바뀌는 코드 
 # def update_network_diagram(df, gene_name, group, threshold):
@@ -259,9 +261,9 @@ def plot_colored_network(df_interactions, df_correlation, gene_name):
             else:
                 net.add_edge(src, dst, color=color)
 
-        net.show("pyvis_net_graph.html")
+        net.show("one_gene_search_graph.html")
 
-        HtmlFile = open('pyvis_net_graph.html', 'r', encoding='utf-8')
+        HtmlFile = open('one_gene_search_graph.html', 'r', encoding='utf-8')
         source_code = HtmlFile.read() 
         st.components.v1.html(source_code, width=670, height=610)
 '''
@@ -310,10 +312,14 @@ def load_edge_data(gene_name):
     df = pd.read_csv(file_path, sep='\t')
     interactions = df[((df['Official Symbol Interactor A'] == gene_name) | 
                     (df['Official Symbol Interactor B'] == gene_name))][['Official Symbol Interactor A', 'Official Symbol Interactor B', 'Experimental System Type', 'Author', 'Publication Source']]
+    interactions = interactions.drop_duplicates()
+
+    base_url = 'https://pubmed.ncbi.nlm.nih.gov/'
+    interactions['Publication Source Number'] = base_url + interactions['Publication Source'].str.replace('PUBMED:', '') + '/'
     return interactions
 
 def show_edge_info(gene_name):
-    st.title(f"{gene_name} 유전자 상호작용 정보")
+    st.subheader(f"**Identification of genes associated with '{st.session_state['gene_name']}'**")
 
     if 'gene_name' not in st.session_state:
         st.session_state['gene_name'] = gene_name
@@ -338,7 +344,27 @@ def show_edge_info(gene_name):
                 interactions_2 = interactions_1[((interactions_1['Official Symbol Interactor A'] == g) |
                                                 (interactions_1['Official Symbol Interactor B'] == g))]
                 interactions_final = pd.concat([interactions_final, interactions_2])
+                interactions_final['Link Title'] = interactions_final['Publication Source Number'].apply(get_link_title)
             if not interactions_final.empty:
-                st.write(f"{gene_name_1}와 {', '.join(gene_name_2)} 간의 edge info.:", interactions_final)
+                st.write(f"{gene_name_1}와 {', '.join(gene_name_2)} 간의 edge info.:")
+                st.dataframe(
+                    interactions_final,
+                    hide_index=True,
+                    column_config={
+                        'Publication Source Number' : st.column_config.LinkColumn(display_text='🔗')
+                    }
+                )
             else:
                 st.write(interactions_final)
+
+def get_link_title(url):
+    try:
+        response = requests.get(url)
+        if response.status_code == 200:
+            soup = BeautifulSoup(response.text, 'html.parser')
+            title = soup.title.string
+            title = title.replace('- PubMed', '')
+            return title
+    except Exception as e:
+        print(f'Error fetching title for link {url}: {str(e)}')
+    return None
