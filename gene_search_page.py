@@ -2,6 +2,7 @@ import streamlit as st
 import one_gene_search
 import pandas as pd
 import re
+
 def create_header(gene_name=None):
     st.image('images/logo.png', width=100)
     if gene_name:

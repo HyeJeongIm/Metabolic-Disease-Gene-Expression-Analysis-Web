@@ -323,7 +323,7 @@ def show_edge_info(gene_name):
 
     if 'gene_name' not in st.session_state:
         st.session_state['gene_name'] = gene_name
-    gene_name_1 = st.selectbox("첫 번째 유전자를 선택하세요.", [st.session_state['gene_name']])
+    gene_name_1 = st.selectbox("", [st.session_state['gene_name']])
 
     interactions_1 = load_edge_data(gene_name_1)
     connected_genes_1 = set(interactions_1['Official Symbol Interactor A']).union(
@@ -331,7 +331,7 @@ def show_edge_info(gene_name):
     connected_genes_1.discard(gene_name_1)  
     sorted_connected_genes_1 = sorted(list(connected_genes_1))
 
-    gene_name_2 = st.multiselect("두 번째 유전자(들)를 선택하세요.", sorted_connected_genes_1, key='second_genes')
+    gene_name_2 = st.multiselect("Choose the gene name which you want to see information", sorted_connected_genes_1, key='second_genes')
     
     _, col2 = st.columns([8, 1])
     with col2:
@@ -346,7 +346,7 @@ def show_edge_info(gene_name):
                 interactions_final = pd.concat([interactions_final, interactions_2])
                 interactions_final['Link Title'] = interactions_final['Publication Source Number'].apply(get_link_title)
             if not interactions_final.empty:
-                st.write(f"{gene_name_1}와 {', '.join(gene_name_2)} 간의 edge info.:")
+                st.write(f"{gene_name_1}와 {', '.join(gene_name_2)} interaction edge information:")
                 st.dataframe(
                     interactions_final,
                     hide_index=True,
