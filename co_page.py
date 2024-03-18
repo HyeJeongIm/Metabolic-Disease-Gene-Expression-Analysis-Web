@@ -4,6 +4,9 @@ import base64
 import os
 from pyvis.network import Network
 import streamlit.components.v1 as components
+import requests
+from bs4 import BeautifulSoup
+import re
 
 def create_header():
     st.title('Co-expression Network Analysis')
@@ -77,6 +80,9 @@ def create_network(df, file_name):
         net.add_node(gene1, label=gene1, color='grey', title=gene1)
         net.add_node(gene2, label=gene2, color='grey', title=gene2)
         net.add_edge(gene1, gene2, title=str(weight), value=abs(weight), color=edge_color)
+
+        st.session_state['node'] = net.get_nodes()
+        st.session_state['edge'] = net.get_edges()
     return net
 
 def show_network(file_path, threshold):
@@ -105,6 +111,9 @@ def create_group_network(df, bgcolor='#ffffff', font_color='black'):
         net.add_node(gene2, label=gene2, title=f"{gene2}: {weight}", color='grey')
         # 엣지 색상 적용
         net.add_edge(gene1, gene2, title=f"{weight}", value=abs(weight), color=color)
+
+        st.session_state['node'] = net.get_nodes()
+        st.session_state['edge'] = net.get_edges()
     return net
 
 '''
@@ -286,10 +295,29 @@ def show_correlation(samples, threshold):
                 filtered_df = load_data(file_path, threshold)
                 filtered_df = filtered_df.rename(columns={'Gene': 'Gene1', 'Gene.1': 'Gene2'})
 
-            show_legend()
-            with st.spinner('it may takes a few minutes'):
-                show_network(file_path, threshold)
+            if len(filtered_df) > 6170 and len(filtered_df) < 4900000:
+                # (Edges to draw: XXXX, )
+                st.error(f'''
+                        \n
+                        Sorry, we can\'t draw a network with more than 6,170 edges. (Edges to draw: {format(len(filtered_df), ',')})\n
+                        Please try a higher correlation threshold.\n
+                        Data that needs to be drawn can be downloaded via the Download button. \n
+                        ''', icon="🚨")
+                st.markdown("""<br>""" * 2, unsafe_allow_html=True)
                 download_button(filtered_df)
+            elif len(filtered_df) > 4900000:
+                st.error(f'''
+                        \n
+                        Sorry, we can\'t draw a network with more than 6,170 edges. (Edges to draw: {format(len(filtered_df), ',')})\n
+                        Also, we can't make data file with more than 4,900,000 edges.\n
+                        Please try a higher correlation threshold.\n
+                        ''', icon="🚨")
+            else:
+                show_legend()
+                with st.spinner('it may takes a few minutes'):
+                    show_network(file_path, threshold)
+                    download_button(filtered_df)
+                    show_edge_info()
         else:
             st.error(f"File for {group} does not exist.")
             
@@ -337,6 +365,7 @@ def show_correlation(samples, threshold):
             with st.spinner('it may takes a few minutes'):
                 show_combined_network(samples, threshold)
                 download_button(merged_df)
+                show_edge_info()
             show_df(samples, threshold)
     else:
         st.error("Please select one or two groups.")        
@@ -359,3 +388,92 @@ def download_button(df):
     b64 = base64.b64encode(csv.encode()).decode()  # CSV를 base64로 변환
     href = f'<a href="data:file/csv;base64,{b64}" download="data.csv" style="float: right; position: relative; top: -50px;"><button style="background-color: #FF4B4B; border: none; color: white; padding: 10px 12px; text-align: center; text-decoration: none; display: inline-block; font-size: 16px; margin: 4px 2px; cursor: pointer; border-radius: 12px;">Download CSV File</button></a>'
     st.markdown(href, unsafe_allow_html=True)
+
+def load_edge_data(gene_name,  gene_list):
+    file_path = './data/Gene-Gene Interaction/BIOGRID-ORGANISM-Homo_sapiens-4.4.229.tab3.txt'
+    df = pd.read_csv(file_path, sep='\t')
+    
+    # 관계가 있는 유전자들만 필터링
+    related_genes = set([gene_name] + gene_list)
+    interactions = df[((df['Official Symbol Interactor A'] == gene_name) & df['Official Symbol Interactor B'].isin(gene_list)) |
+                 ((df['Official Symbol Interactor B'] == gene_name) & df['Official Symbol Interactor A'].isin(gene_list))]
+    interactions = interactions.drop_duplicates()
+    
+    base_url = 'https://pubmed.ncbi.nlm.nih.gov/'
+    interactions['Publication Source Number'] = base_url + interactions['Publication Source'].str.replace('PUBMED:', '') + '/'
+    
+    interactions = interactions[['Official Symbol Interactor A', 'Official Symbol Interactor B', 'Experimental System Type', 'Author', 'Publication Source', 'Publication Source Number']]
+
+    return interactions
+
+def show_edge_info():
+    node = st.session_state['node']
+    gene_list = ', '.join([f"'{element}'" for element in node])
+
+    st.subheader(f"**Identification of genes associated with {gene_list}**")
+
+    node.sort()
+    node.insert(0, 'Choose the gene which you want to see information.')
+    gene_list_1 = st.selectbox("", node, index=0)
+
+
+    if gene_list_1 != 'Choose the gene which you want to see information.':
+        edge = st.session_state['edge']
+
+        opposite_genes = []
+        for interaction in edge:
+            if interaction['from'] == gene_list_1:
+                opposite_genes.append(interaction['to'])
+            elif interaction['to'] == gene_list_1:
+                opposite_genes.append(interaction['from'])
+        opposite_genes.sort()
+
+        interactions_1 = load_edge_data(gene_list_1, opposite_genes)
+        if gene_list_1: 
+            st.success(f'You can choose from these genes: {", ".join(opposite_genes)}')
+        
+        gene_list_2 = st.text_area('Type the gene name which you want to see information.')
+        if gene_list_2.strip():  # 입력값이 있는지 확인
+            gene_list_2 = re.split('[ ,\t\n]+', gene_list_2.strip())
+            gene_list_2 = [s.replace("'", "").replace('"', '') for s in gene_list_2]
+            
+            for gene_name in gene_list_2:
+                if gene_name not in opposite_genes:
+                    st.error(f'Gene name "{gene_name}" is not valid. Please type valid gene names.')
+                    break
+
+        _, col2 = st.columns([8, 1])
+        with col2:
+            apply_clicked = st.button('Show')
+            
+        if apply_clicked:
+            if len(gene_list_2) > 0:
+                interactions_final = pd.DataFrame()
+                for g in gene_list_2:
+                    interactions_2 = interactions_1[((interactions_1['Official Symbol Interactor A'] == g) |
+                                                    (interactions_1['Official Symbol Interactor B'] == g))]
+                    interactions_final = pd.concat([interactions_final, interactions_2])
+                    interactions_final['Link Title'] = interactions_final['Publication Source Number'].apply(get_link_title)
+                if not interactions_final.empty:
+                    st.write(f"{gene_list_1}와 {', '.join(gene_list_2)} interaction edge information:")
+                    st.dataframe(
+                        interactions_final,
+                        hide_index=True,
+                        column_config={
+                            'Publication Source Number' : st.column_config.LinkColumn(display_text='🔗')
+                        }
+                    )
+                else:
+                    st.write(interactions_final)
+
+def get_link_title(url):
+    try:
+        response = requests.get(url)
+        if response.status_code == 200:
+            soup = BeautifulSoup(response.text, 'html.parser')
+            title = soup.title.string
+            title = title.replace('- PubMed', '')
+            return title
+    except Exception as e:
+        print(f'Error fetching title for link {url}: {str(e)}')
+    return None
