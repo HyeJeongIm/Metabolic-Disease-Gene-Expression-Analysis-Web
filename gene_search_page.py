@@ -11,7 +11,7 @@ def create_header(gene_name=None):
         st.title('One Gene Search')
 
 '''
- v1
+v1
     유전자 이름 삭제
     맨 아래 back button 생성
     이전페이지로 넘어감
