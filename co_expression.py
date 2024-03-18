@@ -57,7 +57,7 @@ def show_legend():
             Negative correlation
         </div>
         <div style="margin-top: 10px;">
-            You can zoom in and out.
+            Use your mouse wheel to zoom in or zoom out.
         </div>
     </div>
     """
@@ -171,12 +171,20 @@ def show_df(selected_groups, threshold):
     df_green = combined_df[combined_df['color'] == 'green']
     df_orange = combined_df[combined_df['color'] == 'orange']
     print(df_black.columns)
+
+    gene_column = {
+        'Gene' : 'Gene1',
+        'Gene.1' : 'Gene2',
+    }
     
     st.write(f"### Group: {format_group_name(selected_groups[0])}")
+    df_green = df_green.rename(columns=gene_column)
     st.dataframe(df_green.style.apply(color_rows, axis=1), width=600, hide_index=True)
     st.write(f"### Group: {format_group_name(selected_groups[1])}")
+    df_orange = df_orange.rename(columns=gene_column)
     st.dataframe(df_orange.style.apply(color_rows, axis=1), width=600, hide_index=True)
     st.write(f"### Group: Both")
+    df_black = df_black.rename(columns=gene_column)
     st.dataframe(df_black.style.apply(color_rows, axis=1), width=600, hide_index=True)
     
 def color_rows(row):
