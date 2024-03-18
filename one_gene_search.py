@@ -306,24 +306,28 @@ def str_to_float():
                 st.error('Please enter a valid float number')
         else:
             st.error('Please enter a value')  # 입력이 비어 있는 경우
-            
+
+@st.cache_data(show_spinner=False)
 def load_edge_data(gene_name):
     file_path = 'data/Gene-Gene Interaction/BIOGRID-ORGANISM-Homo_sapiens-4.4.229.tab3.txt'
-    df = pd.read_csv(file_path, sep='\t')
+    
+    cols_to_load = ['Official Symbol Interactor A', 'Official Symbol Interactor B', 'Experimental System Type', 'Author', 'Publication Source']
+    df = pd.read_csv(file_path, sep='\t', usecols=cols_to_load)
+    
     interactions = df[((df['Official Symbol Interactor A'] == gene_name) | 
-                    (df['Official Symbol Interactor B'] == gene_name))][['Official Symbol Interactor A', 'Official Symbol Interactor B', 'Experimental System Type', 'Author', 'Publication Source']]
+                       (df['Official Symbol Interactor B'] == gene_name))]
+    
     interactions = interactions.drop_duplicates()
 
     base_url = 'https://pubmed.ncbi.nlm.nih.gov/'
     interactions['Publication Source Number'] = base_url + interactions['Publication Source'].str.replace('PUBMED:', '') + '/'
+    
     return interactions
 
 def show_edge_info(gene_name):
-    st.subheader(f"**Identification of genes associated with '{st.session_state['gene_name']}'**")
+    st.subheader(f"**Identification of genes associated with '{gene_name}'**")
 
-    if 'gene_name' not in st.session_state:
-        st.session_state['gene_name'] = gene_name
-    gene_name_1 = st.selectbox("", [st.session_state['gene_name']])
+    gene_name_1 = st.selectbox("", [gene_name])
 
     interactions_1 = load_edge_data(gene_name_1)
     connected_genes_1 = set(interactions_1['Official Symbol Interactor A']).union(
@@ -337,25 +341,21 @@ def show_edge_info(gene_name):
     with col2:
         apply_clicked = st.button('Show')
         
-    if apply_clicked:
-        if len(gene_name_2) > 0:
-            interactions_final = pd.DataFrame()
-            for g in gene_name_2:
-                interactions_2 = interactions_1[((interactions_1['Official Symbol Interactor A'] == g) |
-                                                (interactions_1['Official Symbol Interactor B'] == g))]
-                interactions_final = pd.concat([interactions_final, interactions_2])
-                interactions_final['Link Title'] = interactions_final['Publication Source Number'].apply(get_link_title)
-            if not interactions_final.empty:
-                st.write(f"{gene_name_1}와 {', '.join(gene_name_2)} interaction edge information:")
-                st.dataframe(
-                    interactions_final,
-                    hide_index=True,
-                    column_config={
-                        'Publication Source Number' : st.column_config.LinkColumn(display_text='🔗')
-                    }
-                )
-            else:
-                st.write(interactions_final)
+    if apply_clicked and gene_name_2:
+        mask = interactions_1['Official Symbol Interactor A'].isin(gene_name_2) | interactions_1['Official Symbol Interactor B'].isin(gene_name_2)
+        interactions_final = interactions_1[mask]
+
+        if not interactions_final.empty:
+            st.write(f"{gene_name_1}와 {', '.join(gene_name_2)} interaction edge information:")
+            st.dataframe(
+                interactions_final,
+                hide_index=True,
+                column_config={
+                    'Publication Source Number': st.column_config.LinkColumn(display_text='🔗')
+                }
+            )
+        else:
+            st.write("No interactions found.")
 
 def get_link_title(url):
     try:
