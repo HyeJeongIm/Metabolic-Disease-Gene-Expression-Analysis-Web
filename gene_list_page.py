@@ -70,10 +70,10 @@ def create_search_bar():
             if len(valid_threshold) == 2:
                 if valid_threshold is not None:
                     gene_list.show_network_diagram(st.session_state['gene_list'], group, valid_threshold[0])
-                    gene_list.show_edge_info(st.session_state['gene_list'])
         else:
             gene_list.show_network_diagram(st.session_state['gene_list'], group)
-            gene_list.show_edge_info(st.session_state['gene_list'])
+            
+        gene_list.show_edge_info(st.session_state['gene_list'])
         
         if st.button('Back'):
             st.session_state['pressed'] = False

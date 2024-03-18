@@ -153,7 +153,7 @@ def show_legend():
             </svg>
             Negative correlation
         </div>
-         <div style="margin-top: 10px;">
+        <div style="margin-top: 10px;">
             Use your mouse wheel to zoom in or zoom out.
         </div>
     </div>
@@ -185,6 +185,9 @@ def plot_initial_pyvis(df_interactions, genes_list):
     HtmlFile = open('pyvis_net_graph.html', 'r', encoding='utf-8')
     source_code = HtmlFile.read() 
     st.components.v1.html(source_code, width=670, height=610)
+
+    st.session_state['node'] = net.get_nodes()
+    st.session_state['edge'] = net.get_edges()
         
 def plot_colored_network(df_interactions, df_correlation_filtered, genes_list):
     net = Network(notebook=True, directed=False)
@@ -262,8 +265,12 @@ def load_edge_data(gene_name,  gene_list):
     return interactions
 
 def show_edge_info(gene_list):
-    st.subheader(f"**Identification of genes associated with '{st.session_state['gene_list']}'**")
+    gene_list = ', '.join([f"'{element}'" for element in gene_list])
 
+    st.subheader(f"**Identification of genes associated with {gene_list}**")
+
+    node = st.session_state['node']
+    node.sort()
     gene_list_1 = st.selectbox("", st.session_state['node'])
     edge = st.session_state['edge']
 
@@ -275,9 +282,7 @@ def show_edge_info(gene_list):
             opposite_genes.append(interaction['from'])
     opposite_genes.sort()
 
-    interactions_1 = load_edge_data(gene_list_1, opposite_genes)
-    # connected_genes_1 = set(interactions_1['Official Symbol Interactor A']).union(
-    #     set(interactions_1['Official Symbol Interactor B']))  
+    interactions_1 = load_edge_data(gene_list_1, opposite_genes) 
 
     gene_list_2 = st.multiselect("Choose the gene name which you want to see information", opposite_genes, key='second_gene_list')
     
