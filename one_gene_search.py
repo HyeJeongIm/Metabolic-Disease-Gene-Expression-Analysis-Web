@@ -165,46 +165,44 @@ def show_box_plot(name, z_score):
 
 @st.cache_data(show_spinner=False)
 def load_network_data(gene_name):
-    file_path = 'data\Gene-Gene Interaction\BIOGRID-ORGANISM-Homo_sapiens-4.4.229.tab3.txt'
-    df = pd.read_csv(file_path, sep='\t')
-    interactions = df[((df['Official Symbol Interactor A'] == gene_name) | 
-                    (df['Official Symbol Interactor B'] == gene_name))][['Official Symbol Interactor A', 'Official Symbol Interactor B']]
-    return interactions 
+    file_path = 'data/Gene-Gene Interaction/BIOGRID-ORGANISM-Homo_sapiens-4.4.229.tab3.txt'
+    cols_to_load = ['Official Symbol Interactor A', 'Official Symbol Interactor B'] 
+    df = pd.read_csv(file_path, sep='\t', usecols=cols_to_load)
+    interactions = df[(df['Official Symbol Interactor A'] == gene_name) | 
+                      (df['Official Symbol Interactor B'] == gene_name)]
+    return interactions.drop_duplicates()
 
+# 상호작용 네트워크 초기 시각화 함수
 def plot_initial_pyvis(df, gene_name):
-    # with st.spinner('it may takes few minutes'):
-        net = Network(notebook=True, directed=False)
-        # 이미 추가된 노드를 추적하기 위함
-        seen_nodes = set()  
+    net = Network(notebook=True, directed=False)
+    seen_nodes = set()  
 
-        unique_edges = df.drop_duplicates(subset=['Official Symbol Interactor A', 'Official Symbol Interactor B'])
-        print('unique_edges', len(unique_edges))
-        for _, row in unique_edges.iterrows():
-            src, dst = row['Official Symbol Interactor A'], row['Official Symbol Interactor B']
+    for _, row in df.iterrows():
+        src, dst = row['Official Symbol Interactor A'], row['Official Symbol Interactor B']
 
-            for node in [src, dst]:
-                if node not in seen_nodes:
-                    if node == gene_name:
-                        net.add_node(node, label=node, title=node, color='Orange', size=25)
-                    else:
-                        net.add_node(node, label=node, title=node, color='grey', size=15)
-                    seen_nodes.add(node)
+        for node in [src, dst]:
+            if node not in seen_nodes:
+                net.add_node(node, label=node, title=node, color='orange' if node == gene_name else 'grey', size=25 if node == gene_name else 15)
+                seen_nodes.add(node)
 
-            net.add_edge(src, dst, color='lightgrey')
+        net.add_edge(src, dst, color='lightgrey')
 
-        net.show("pyvis_net_graph.html")
-
-        HtmlFile = open('pyvis_net_graph.html', 'r', encoding='utf-8')
-        source_code = HtmlFile.read() 
-        # components.html(source_code, width=670, height=1070)
-        st.components.v1.html(source_code, width=670, height=610)
+    net.show("pyvis_net_graph.html")
+    HtmlFile = open("pyvis_net_graph.html", 'r', encoding='utf-8')
+    source_code = HtmlFile.read() 
+    components.html(source_code, width=670, height=610)
 
 @st.cache_data(show_spinner=False)
 def load_correlation_data(group, threshold):
     file_path = f'data/Gene-Gene Expression Correlation/Correlation Higher Than 0.5/GeneGene_HighCorrelation_{group}_0.5.txt'
-    df_correlation = pd.read_csv(file_path, sep='\t')
+
+    cols_to_load = ['Gene', 'Gene.1', 'Correlation coefficient']
+    dtype_spec = {'Gene': str, 'Gene.1': str, 'Correlation coefficient': float}
+
+    df_correlation = pd.read_csv(file_path, sep='\t', usecols=cols_to_load, dtype=dtype_spec)
     df_correlation_filtered = df_correlation[df_correlation['Correlation coefficient'].abs() >= threshold]
-    return df_correlation_filtered   
+    
+    return df_correlation_filtered 
 
 def show_legend():
     legend_html = """
