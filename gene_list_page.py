@@ -8,17 +8,16 @@ def create_header():
     
 @st.cache_data(show_spinner=False)
 def check_gene_names(genes_list):
-    path = 'data/Gene-Gene Expression Correlation/Correlation Higher Than 0.5/GeneGene_HighCorrelation_Adipose_LH_0.5.txt'
-    df = pd.read_csv(path, delimiter='\t', usecols=['Gene', 'Gene.1'])
-    all_genes = pd.concat([df['Gene'], df['Gene.1']]).unique()
+    path = 'all_genes_list.txt'
+    with open(path, 'r') as file:
+        all_genes = set(file.read().splitlines())  
+    genes_set = set(genes_list)
 
-    genes_series = pd.Series(genes_list).unique()
-    valid_genes = pd.Series(list(set(genes_series) & set(all_genes)))
-    mismatches = list(set(genes_series) - set(all_genes))
+    valid_genes = genes_set & all_genes
+    mismatches = genes_set - all_genes
+    error_message = "Gene names not found: " + ', '.join(mismatches) if mismatches else ""
 
-    error_message = f"Gene names not found: {', '.join(mismatches)}" if mismatches else ""
-
-    return valid_genes.tolist(), error_message
+    return list(valid_genes), error_message
 
 
 def create_search_bar():
@@ -61,7 +60,7 @@ def create_search_bar():
             
             _, col2 = st.columns([8, 1])
             with col2:
-                apply_clicked = st.button('Apply')
+                st.button('Apply')
 
             if len(valid_threshold) == 2:
                 if valid_threshold is not None:
