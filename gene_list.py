@@ -10,6 +10,7 @@ from one_gene_search import custom_sort_key
 from one_gene_search import group_format
 import requests
 from bs4 import BeautifulSoup
+import re
 
 '''
     heatmap
@@ -264,14 +265,24 @@ def load_edge_data(gene_name,  gene_list):
 
     return interactions
 
-def show_edge_info(gene_list):
-    gene_list = ', '.join([f"'{element}'" for element in gene_list])
+def show_edge_info():
+    node = st.session_state['node']
+    gene_list = ', '.join([f"'{element}'" for element in node])
 
     st.subheader(f"**Identification of genes associated with {gene_list}**")
 
-    node = st.session_state['node']
     node.sort()
-    gene_list_1 = st.selectbox("", st.session_state['node'])
+    # gene_list_1 = st.selectbox("", st.session_state['node'])
+    gene_list_1 = st.text_input('Enter the gene name.')
+
+    if gene_list_1.startswith("'") and gene_list_1.endswith("'"):
+        gene_list_1 = gene_list_1[1:-1]
+    elif gene_list_1.startswith('"') and gene_list_1.endswith('"'):
+        gene_list_1 = gene_list_1[1:-1]
+
+    if gene_list_1:
+        if gene_list_1 not in node:
+            st.errorst.error(f'Gene name "{gene_list_1}" is not valid. Please type valid gene names.')
     edge = st.session_state['edge']
 
     opposite_genes = []
@@ -282,10 +293,20 @@ def show_edge_info(gene_list):
             opposite_genes.append(interaction['from'])
     opposite_genes.sort()
 
-    interactions_1 = load_edge_data(gene_list_1, opposite_genes) 
+    interactions_1 = load_edge_data(gene_list_1, opposite_genes)
+    if gene_list_1: 
+        st.success(f'You can choose from these genes: {opposite_genes}')
+    # gene_list_2 = st.multiselect("Choose the gene name which you want to see information", opposite_genes, key='second_gene_list')
+    gene_list_2 = st.text_area('Type the gene name which you want to see information.')
+    if gene_list_2.strip():  # 입력값이 있는지 확인
+        gene_list_2 = re.split('[ ,\t\n]+', gene_list_2.strip())
+        gene_list_2 = [s.replace("'", "").replace('"', '') for s in gene_list_2]
+        
+        for gene_name in gene_list_2:
+            if gene_name not in opposite_genes:
+                st.error(f'Gene name "{gene_name}" is not valid. Please type valid gene names.')
+                break
 
-    gene_list_2 = st.multiselect("Choose the gene name which you want to see information", opposite_genes, key='second_gene_list')
-    
     _, col2 = st.columns([8, 1])
     with col2:
         apply_clicked = st.button('Show')

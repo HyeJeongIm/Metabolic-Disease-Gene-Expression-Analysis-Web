@@ -73,7 +73,7 @@ def create_search_bar():
         else:
             gene_list.show_network_diagram(st.session_state['gene_list'], group)
             
-        gene_list.show_edge_info(st.session_state['gene_list'])
+        gene_list.show_edge_info()
         
         if st.button('Back'):
             st.session_state['pressed'] = False
