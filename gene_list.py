@@ -133,6 +133,14 @@ def show_heatmap(genes_list, base_path):
     network
 '''
 @st.cache_data(show_spinner=False)
+def load_network_data():
+    folder_path = './data/Gene-Gene Interaction/BIOGRID-ORGANISM-Homo_sapiens-4.4.229.tab3.txt'
+    cols_to_load = ['Official Symbol Interactor A', 'Official Symbol Interactor B']
+    df_interactions = pd.read_csv(folder_path, sep='\t', usecols=cols_to_load)
+    
+    return df_interactions
+
+@st.cache_data(show_spinner=False)
 def load_correlation_data(group, threshold):
     file_path = f'data/Gene-Gene Expression Correlation/Correlation Higher Than 0.5/GeneGene_HighCorrelation_{group}_0.5.txt'
     df_correlation = pd.read_csv(file_path, sep='\t')
@@ -161,29 +169,26 @@ def show_legend():
     """
     components.html(legend_html, height=100) 
 
-def plot_initial_pyvis(df_interactions, genes_list):
-    # NetworkX 그래프 생성
-    net = Network(
-        notebook=True,
-        directed=False,
-    )
+def plot_initial_pyvis(genes_list):
+    df_interactions = load_network_data()
+    net = Network(notebook=True, directed=False)
+
+    interactions_set = set(map(frozenset, df_interactions.to_numpy()))
+
+    added_nodes = set()
 
     for gene_pair in combinations(genes_list, 2):
-        # gene_pair의 상호 작용을 데이터프레임에 추가
-        interactions = df_interactions[((df_interactions['Official Symbol Interactor A'] == gene_pair[0]) & (df_interactions['Official Symbol Interactor B'] == gene_pair[1])) |
-                        ((df_interactions['Official Symbol Interactor A'] == gene_pair[1]) & (df_interactions['Official Symbol Interactor B'] == gene_pair[0]))]
-        if not interactions.empty:
-            # 노드 추가
-            net.add_node(gene_pair[0], label=gene_pair[0], title=gene_pair[0], size=15, color='grey')
-            net.add_node(gene_pair[1], label=gene_pair[1], title=gene_pair[1], size=15, color='grey')
+        if frozenset(gene_pair) in interactions_set:
+            # 중복된 노드 추가 방지
+            for gene in gene_pair:
+                if gene not in added_nodes:
+                    net.add_node(gene, label=gene, title=gene, size=15, color='grey')
+                    added_nodes.add(gene)
             # 엣지 추가
             net.add_edge(gene_pair[0], gene_pair[1], color='lightgrey')
 
-    # 네트워크 그리기
     net.show("pyvis_net_graph.html")
-
-    # html 파일 페이지에 나타내기
-    HtmlFile = open('pyvis_net_graph.html', 'r', encoding='utf-8')
+    HtmlFile = open("pyvis_net_graph.html", 'r', encoding='utf-8')
     source_code = HtmlFile.read() 
     st.components.v1.html(source_code, width=670, height=610)
 
@@ -209,9 +214,7 @@ def plot_colored_network(df_interactions, df_correlation_filtered, genes_list):
                     color = 'lightgrey'  
                     net.add_edge(gene_pair[0], gene_pair[1], color=color)
 
-    # 네트워크 그리기
     net.show("plot_colored_network.html")
-
     HtmlFile = open('plot_colored_network.html', 'r', encoding='utf-8')
     source_code = HtmlFile.read() 
     st.components.v1.html(source_code, width=670, height=610)
@@ -222,20 +225,16 @@ def plot_colored_network(df_interactions, df_correlation_filtered, genes_list):
         st.session_state['edge'] = net.get_edges()    
     
 def show_network_diagram(genes_list, group, threshold=0.9):  
-    with st.spinner('It may takes a few minutes'):
-        folder_path = './data/Gene-Gene Interaction/BIOGRID-ORGANISM-Homo_sapiens-4.4.229.tab3.txt'
-        data = pd.read_csv(folder_path, sep='\t')
-        df_interactions = pd.DataFrame(data)
-        
     if group == 'no specific group':
         with st.spinner('It may takes a few minutes'):
-            plot_initial_pyvis(df_interactions, genes_list)
+            plot_initial_pyvis(genes_list)
     else:
         with st.spinner('It may takes a few minutes'):
             formatted_group = group_format(group)
             try:
                 df_correlation = load_correlation_data(formatted_group, threshold)
                 show_legend()
+                df_interactions = load_network_data()
                 plot_colored_network(df_interactions, df_correlation, genes_list)
             except FileNotFoundError:
                 st.error(f"No data file found for the group '{group}' with the selected threshold. Please adjust the threshold or choose a different group.")
@@ -248,14 +247,14 @@ def group_format(sample_class):
 
     return sample_class
 
-def load_edge_data(gene_name,  gene_list):
+@st.cache_data(show_spinner=False)
+def load_edge_data(gene_name, gene_list):
     file_path = './data/Gene-Gene Interaction/BIOGRID-ORGANISM-Homo_sapiens-4.4.229.tab3.txt'
-    df = pd.read_csv(file_path, sep='\t')
+    cols_to_load = ['Official Symbol Interactor A', 'Official Symbol Interactor B', 'Experimental System Type', 'Author', 'Publication Source']
+    df = pd.read_csv(file_path, sep='\t', usecols=cols_to_load)
     
-    # 관계가 있는 유전자들만 필터링
-    related_genes = set([gene_name] + gene_list)
     interactions = df[((df['Official Symbol Interactor A'] == gene_name) & df['Official Symbol Interactor B'].isin(gene_list)) |
-                 ((df['Official Symbol Interactor B'] == gene_name) & df['Official Symbol Interactor A'].isin(gene_list))]
+                      ((df['Official Symbol Interactor B'] == gene_name) & df['Official Symbol Interactor A'].isin(gene_list))]
     interactions = interactions.drop_duplicates()
     
     base_url = 'https://pubmed.ncbi.nlm.nih.gov/'
