@@ -24,7 +24,7 @@ def create_search_bar():
 
         if st.button('Search'):
             st.session_state['co_pressed'] = True
-            st.rerun()
+            st.experimental_rerun()
     else:
         try:
             threshold = float(st.session_state['threshold_str'])
@@ -35,8 +35,8 @@ def create_search_bar():
             st.error('Please enter a valid float number.') 
     
         if st.button('Back'):
-                st.session_state['co_pressed'] = False  
-                st.experimental_rerun()
+            st.session_state['co_pressed'] = False  
+            st.experimental_rerun()
 
 def write_co_page():
     create_header()
