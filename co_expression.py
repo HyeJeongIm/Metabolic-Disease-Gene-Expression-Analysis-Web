@@ -64,11 +64,11 @@ def show_legend():
     components.html(legend_html, height=100)
 
 # 1개 그룹 선택 
-def create_network(df, file_name):
+def create_network(df):
     net = Network(height='750px', width='100%', bgcolor='#ffffff', font_color='black')
     for index, row in df.iterrows():
-        gene1 = row['Gene']
-        gene2 = row['Gene.1']
+        gene1 = row['Gene1']
+        gene2 = row['Gene2']
         weight = row['Correlation coefficient']
         
         # 상관계수 값에 따라 엣지 색상 결정
@@ -82,11 +82,10 @@ def create_network(df, file_name):
         st.session_state['edge'] = net.get_edges()
     return net
 
-def show_network(file_path, threshold):
-    filtered_df = load_data(file_path, threshold)
+def show_network(filtered_df):
     if not filtered_df.empty:
-        net = create_network(filtered_df, file_path)
-        file_name = f"{file_path.split('/')[-1].split('.')[0]}_network.html"
+        net = create_network(filtered_df)
+        file_name = "network.html"
         net.save_graph(file_name)
         HtmlFile = open(file_name, 'r', encoding='utf-8')
         source_code = HtmlFile.read() 
@@ -94,6 +93,19 @@ def show_network(file_path, threshold):
         HtmlFile.close()
     else:
         st.error('No data to display.')
+        
+# def show_network(file_path, threshold):
+#     filtered_df = load_data(file_path, threshold)
+#     if not filtered_df.empty:
+#         net = create_network(filtered_df, file_path)
+#         file_name = f"{file_path.split('/')[-1].split('.')[0]}_network.html"
+#         net.save_graph(file_name)
+#         HtmlFile = open(file_name, 'r', encoding='utf-8')
+#         source_code = HtmlFile.read() 
+#         components.html(source_code, height=800)
+#         HtmlFile.close()
+#     else:
+#         st.error('No data to display.')
         
 def create_group_network(df, bgcolor='#ffffff', font_color='black'):
     net = Network(height='750px', width='100%', bgcolor=bgcolor, font_color=font_color)
@@ -210,30 +222,31 @@ def show_correlation(samples, threshold):
             with st.spinner('it may takes a few minutes'):
                 filtered_df = load_data(file_path, threshold)
                 filtered_df = filtered_df.rename(columns={'Gene': 'Gene1', 'Gene.1': 'Gene2'})
-
-            if len(filtered_df) > 6170 and len(filtered_df) < 4900000:
-                # (Edges to draw: XXXX, )
-                st.error(f'''
-                        \n
-                        Sorry, we can\'t draw a network with more than 6,170 edges. (Edges to draw: {format(len(filtered_df), ',')})\n
-                        Please try a higher correlation threshold.\n
-                        Data that needs to be drawn can be downloaded via the Download button. \n
-                        ''', icon="🚨")
-                st.markdown("""<br>""" * 2, unsafe_allow_html=True)
-                download_button(filtered_df)
-            elif len(filtered_df) > 4900000:
-                st.error(f'''
-                        \n
-                        Sorry, we can\'t draw a network with more than 6,170 edges. (Edges to draw: {format(len(filtered_df), ',')})\n
-                        Also, we can't make data file with more than 4,900,000 edges.\n
-                        Please try a higher correlation threshold.\n
-                        ''', icon="🚨")
-            else:
-                show_legend()
-                with st.spinner('it may takes a few minutes'):
-                    show_network(file_path, threshold)
-                    download_button(filtered_df)
-                    show_edge_info()
+                
+                if not filtered_df.empty:
+                    if len(filtered_df) > 6170 and len(filtered_df) < 4900000:
+                        # (Edges to draw: XXXX, )
+                        st.error(f'''
+                                \n
+                                Sorry, we can\'t draw a network with more than 6,170 edges. (Edges to draw: {format(len(filtered_df), ',')})\n
+                                Please try a higher correlation threshold.\n
+                                Data that needs to be drawn can be downloaded via the Download button. \n
+                                ''', icon="🚨")
+                        st.markdown("""<br>""" * 2, unsafe_allow_html=True)
+                        download_button(filtered_df)
+                    elif len(filtered_df) > 4900000:
+                        st.error(f'''
+                                \n
+                                Sorry, we can\'t draw a network with more than 6,170 edges. (Edges to draw: {format(len(filtered_df), ',')})\n
+                                Also, we can't make data file with more than 4,900,000 edges.\n
+                                Please try a higher correlation threshold.\n
+                                ''', icon="🚨")
+                    else:
+                        show_legend()
+                        with st.spinner('it may takes a few minutes'):
+                            show_network(filtered_df)
+                            download_button(filtered_df)
+                            show_edge_info()
         else:
             st.error(f"File for {group} does not exist.")
             
@@ -285,14 +298,7 @@ def show_correlation(samples, threshold):
             show_df(samples, threshold)
     else:
         st.error("Please select one or two groups.")        
-            
-def format_sample(sample_choice):
-    for key in range(len(sample_choice)):
-        start_idx = sample_choice[key].find("[")  # "["의 인덱스 찾기
-        end_idx = sample_choice[key].find("]")  # "]"의 인덱스 찾기
-        if start_idx != -1 and end_idx != -1:  # "["와 "]"가 모두 존재하는 경우
-            sample_choice[key] = sample_choice[key][:start_idx-1] + '_' + sample_choice[key][start_idx+1:end_idx]
-    return sample_choice
+
 
 # 데이터프레임 다운로드 함수
 st.cache_data(show_spinner=False)
@@ -306,14 +312,13 @@ def download_button(df):
     st.markdown(href, unsafe_allow_html=True)
 
 @st.cache_data(show_spinner=False)
-def load_edge_data(gene_name,  gene_list):
+def load_edge_data(gene_name, gene_list):
     file_path = './data/Gene-Gene Interaction/BIOGRID-ORGANISM-Homo_sapiens-4.4.229.tab3.txt'
-    df = pd.read_csv(file_path, sep='\t')
+    cols_to_load = ['Official Symbol Interactor A', 'Official Symbol Interactor B', 'Experimental System Type', 'Author', 'Publication Source']
+    df = pd.read_csv(file_path, sep='\t', usecols=cols_to_load)
     
-    # 관계가 있는 유전자들만 필터링
-    related_genes = set([gene_name] + gene_list)
     interactions = df[((df['Official Symbol Interactor A'] == gene_name) & df['Official Symbol Interactor B'].isin(gene_list)) |
-                 ((df['Official Symbol Interactor B'] == gene_name) & df['Official Symbol Interactor A'].isin(gene_list))]
+                      ((df['Official Symbol Interactor B'] == gene_name) & df['Official Symbol Interactor A'].isin(gene_list))]
     interactions = interactions.drop_duplicates()
     
     base_url = 'https://pubmed.ncbi.nlm.nih.gov/'
