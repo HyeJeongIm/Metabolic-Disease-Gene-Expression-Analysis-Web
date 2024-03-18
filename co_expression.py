@@ -8,9 +8,6 @@ import requests
 from bs4 import BeautifulSoup
 import re
 
-def create_header():
-    st.title('Co-expression Network Analysis')
-
 @st.cache_data(show_spinner=False)
 def load_data(file_path, threshold):
     df = pd.read_csv(file_path, sep='\t')
@@ -192,96 +189,7 @@ def color_rows(row):
     elif row['color'] == 'green':
         styles.append('background-color: green; color: white')  # 흰색 텍스트
 
-    return styles * len(row)
-    
-# def write_co_page():
-#     create_header()
-#     sample_class = ['Adipose [LH]', 'Adipose [OH]', 'Adipose [OD]',
-#                     'Liver [LH]', 'Liver [OH]', 'Liver [OD]',
-#                     'Muscle [LH]', 'Muscle [OH]', 'Muscle [OD]']
-#     selected_groups = st.multiselect('Choose one or two sample group for annotation', sample_class, key='sample_input', max_selections=2)
-#     threshold = str_to_float()
-
-#     samples = format_sample(selected_groups)
-
-#     if st.button('Apply'):
-#         st.subheader("Co-expression Network")
-
-#         if len(samples) == 1:
-#             with st.spinner('it may takes a few minutes'):
-#                 group = samples[0]
-#                 file_path = os.path.join('data', 'Gene-Gene Expression Correlation', 'Correlation Higher Than 0.5', f'GeneGene_HighCorrelation_{group}_0.5.txt')
-#             if os.path.isfile(file_path):
-#                 # 다운로드용 데이터프레임
-#                 with st.spinner('it may takes a few minutes'):
-#                     filtered_df = load_data(file_path, threshold)
-#                     filtered_df = filtered_df.rename(columns={'Gene': 'Gene1', 'Gene.1': 'Gene2'})
-
-#                 show_legend()
-#                 with st.spinner('it may takes a few minutes'):
-#                     show_network(file_path, threshold)
-#                     download_button(filtered_df)
-#             else:
-#                 st.error(f"File for {group} does not exist.")
-#         elif len(samples) == 2:
-#             # 다운로드용 데이터프레임
-#             with st.spinner('it may takes a few minutes'):
-#                 pathes = []
-#                 for i in range(len(samples)):
-#                     sample_path = f'./data/Gene-Gene Expression Correlation/Correlation Higher Than 0.5/GeneGene_HighCorrelation_{samples[i]}_0.5.txt'
-#                     pathes.append(sample_path)
-                
-#                 df_sample0 = load_data(pathes[0], threshold)
-#                 df_sample1 = load_data(pathes[1], threshold)
-
-#                 merged_df = pd.merge(df_sample0, df_sample1, on=['Gene', 'Gene.1'], how='outer', suffixes=('_Group_A', '_Group_B'))
-#                 merged_df.fillna(0, inplace=True)
-#                 merged_df = merged_df.rename(columns={'Gene': 'Gene1', 'Gene.1': 'Gene2'})
-
-#             if len(merged_df) > 6170:
-#                 # (Edges to draw: XXXX, )
-#                 st.error('''
-#                         \n
-#                         Sorry, we can\'t draw a network with more than 6170 edges.\n
-#                         Please type a higher threshold and try again.\n
-#                         Data that needs to be drawn can be downloaded via the Download button.
-#                         ''', icon="🚨")
-#                 download_button(merged_df)
-#             else:
-#                 show_group_legend(samples)
-#                 with st.spinner('it may takes a few minutes'):
-#                     show_combined_network(samples, threshold)
-#                     download_button(merged_df)
-#                 show_df(samples, threshold)
-#         else:
-#             st.error("Please select one or two groups.")
-
-def write_co_page():
-    create_header()
-    sample_class = ['Adipose [LH]', 'Adipose [OH]', 'Adipose [OD]',
-                    'Liver [LH]', 'Liver [OH]', 'Liver [OD]',
-                    'Muscle [LH]', 'Muscle [OH]', 'Muscle [OD]']
-    selected_groups = st.multiselect('Choose one or two sample group for annotation', sample_class, key='sample_input', max_selections=2)
-    # threshold = str_to_float()
-
-    threshold_str = st.text_input('Enter threshold of absolute correlation coefficient (minimum: 0.5)', value=0.5, key='co_threshold')
-
-    samples = format_sample(selected_groups)
-
-    # Apply 버튼은 항상 표시
-    _, col2 = st.columns([8, 1])
-    with col2:
-        apply_clicked = st.button('Apply')
-
-    try:
-        threshold = float(threshold_str)
-        if threshold < 0.5:
-            st.error('Please try a higher correlation threshold.')
-        elif apply_clicked:    
-            show_correlation(samples, threshold)
-    except ValueError:
-        st.error('Please enter a valid float number.')    
-        
+    return styles * len(row)    
 
 def show_correlation(samples, threshold):
     st.subheader("Co-expression Network")  
@@ -389,6 +297,7 @@ def download_button(df):
     href = f'<a href="data:file/csv;base64,{b64}" download="data.csv" style="float: right; position: relative; top: -50px;"><button style="background-color: #FF4B4B; border: none; color: white; padding: 10px 12px; text-align: center; text-decoration: none; display: inline-block; font-size: 16px; margin: 4px 2px; cursor: pointer; border-radius: 12px;">Download CSV File</button></a>'
     st.markdown(href, unsafe_allow_html=True)
 
+@st.cache_data(show_spinner=False)
 def load_edge_data(gene_name,  gene_list):
     file_path = './data/Gene-Gene Interaction/BIOGRID-ORGANISM-Homo_sapiens-4.4.229.tab3.txt'
     df = pd.read_csv(file_path, sep='\t')

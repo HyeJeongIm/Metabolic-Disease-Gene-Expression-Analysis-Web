@@ -1,6 +1,6 @@
 import streamlit as st
 from streamlit_option_menu import option_menu
-import main_page, gene_search_page, gene_list_page, deg_page, co_page
+import main_page, gene_search_page, gene_list_page, deg_page, co_expression_page
 
 st.set_page_config(
     page_title="Metabolic Disease",
@@ -30,7 +30,7 @@ def create_layout():
     elif page == 'DEG Analysis':
         deg_page.write_deg_page()
     elif page == 'Co-expression':
-        co_page.write_co_page()
+        co_expression_page.write_co_page()
     elif page == 'Reference':
         pass
 
