@@ -8,17 +8,14 @@ def create_header():
     
 @st.cache_data(show_spinner=False)
 def check_gene_names(genes_list):
-    # 필요한 열만 로드하기 위해 usecols 매개변수 사용
-    path = 'data/Gene-Gene Expression Correlation/Correlation Higher Than 0.5/GeneGene_HighCorrelation_Adipose_LH_0.5.txt'
-    df = pd.read_csv(path, delimiter='\t', usecols=['Gene', 'Gene.1'])
-    all_genes = pd.concat([df['Gene'], df['Gene.1']]).unique()  
-
-    # 벡터화된 연산을 사용하여 유효한 유전자와 불일치하는 유전자를 확인
+    path = 'all_genes_list.txt'
+    
+    with open(path, 'r') as file:
+        all_genes = set(file.read().splitlines())  
+    
     valid_genes = [gene for gene in genes_list if gene in all_genes]
-    mismatches = list(set(genes_list) - set(valid_genes))
-
-    error_message = f"Gene names not found: {', '.join(mismatches)}" if mismatches else ""
-
+    mismatches = [gene for gene in genes_list if gene not in all_genes]
+    error_message = "Gene names not found: " + ', '.join(mismatches) if mismatches else ""
     return valid_genes, error_message
 
 
