@@ -5,6 +5,14 @@ import pandas as pd
 def create_header():
     st.title('Co-expression Network Analysis')
 
+def format_sample(sample_choice):
+    for key in range(len(sample_choice)):
+        start_idx = sample_choice[key].find("[")  # "["의 인덱스 찾기
+        end_idx = sample_choice[key].find("]")  # "]"의 인덱스 찾기
+        if start_idx != -1 and end_idx != -1:  # "["와 "]"가 모두 존재하는 경우
+            sample_choice[key] = sample_choice[key][:start_idx-1] + '_' + sample_choice[key][start_idx+1:end_idx]
+    return sample_choice
+
 def create_search_bar():
     if 'co_pressed' not in st.session_state:
         st.session_state['co_pressed'] = False
@@ -17,7 +25,7 @@ def create_search_bar():
 
         threshold_str = st.text_input('Enter threshold of absolute correlation coefficient (minimum: 0.5)', value=0.5, key='co_threshold')
 
-        samples = co_expression.format_sample(selected_groups)
+        samples = format_sample(selected_groups)
 
         st.session_state['samples'] = samples
         st.session_state['threshold_str'] = threshold_str
