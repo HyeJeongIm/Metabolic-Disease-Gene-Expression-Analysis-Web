@@ -245,6 +245,7 @@ def plot_colored_network(df_interactions, df_correlation, gene_name):
                 color = 'red' if correlation > 0 else 'blue'
                 if color in ['red', 'blue']:
                     weight = correlation
+                    
             # create_network(correlation_row)
             # 노드 추가
             for node in [src, dst]:
@@ -338,22 +339,27 @@ def show_edge_info(gene_name):
     _, col2 = st.columns([8, 1])
     with col2:
         apply_clicked = st.button('Show')
-        
-    if apply_clicked and gene_name_2:
-        mask = interactions_1['Official Symbol Interactor A'].isin(gene_name_2) | interactions_1['Official Symbol Interactor B'].isin(gene_name_2)
-        interactions_final = interactions_1[mask]
 
-        if not interactions_final.empty:
-            st.write(f"{gene_name_1}와 {', '.join(gene_name_2)} interaction edge information:")
-            st.dataframe(
-                interactions_final,
-                hide_index=True,
-                column_config={
-                    'Publication Source Number': st.column_config.LinkColumn(display_text='🔗')
-                }
-            )
-        else:
-            st.write("No interactions found.")
+    if apply_clicked:
+        if len(gene_name_2) > 0:
+            interactions_final = pd.DataFrame()
+            for g in gene_name_2:
+                interactions_2 = interactions_1[((interactions_1['Official Symbol Interactor A'] == g) |
+                                                (interactions_1['Official Symbol Interactor B'] == g))]
+                interactions_final = pd.concat([interactions_final, interactions_2])
+                interactions_final['Link Title'] = interactions_final['Publication Source Number'].apply(get_link_title)
+            if not interactions_final.empty:
+                st.write(f"{gene_name_1}와 {', '.join(gene_name_2)} interaction edge information:")
+                st.dataframe(
+                    interactions_final,
+                    hide_index=True,
+                    column_config={
+                        'Publication Source Number' : st.column_config.LinkColumn(display_text='🔗')
+                    }
+                )
+            else:
+                st.write(interactions_final)
+
 
 def get_link_title(url):
     try:
