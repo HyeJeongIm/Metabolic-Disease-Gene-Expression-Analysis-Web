@@ -192,6 +192,9 @@ def plot_initial_pyvis(df, gene_name):
     source_code = HtmlFile.read() 
     components.html(source_code, width=670, height=610)
 
+    st.session_state['node'] = net.get_nodes()
+    st.session_state['edge'] = net.get_edges()
+
 @st.cache_data(show_spinner=False)
 def load_correlation_data(group, threshold):
     file_path = f'data/Gene-Gene Expression Correlation/Correlation Higher Than 0.5/GeneGene_HighCorrelation_{group}_0.5.txt'
@@ -284,7 +287,7 @@ def show_network_diagram(gene_name, group, threshold=0.9):
                 plot_colored_network(df_interactions, df_correlation, gene_name)
             except FileNotFoundError:
                 st.error(f"No data file found for the group '{group}' with the selected threshold. Please adjust the threshold or choose a different group.") 
-     
+
 def group_format(sample_class):
     start_idx = sample_class.find("[")  # "["의 인덱스 찾기
     end_idx = sample_class.find("]")  # "]"의 인덱스 찾기
@@ -307,58 +310,65 @@ def str_to_float():
             st.error('Please enter a value')  # 입력이 비어 있는 경우
 
 @st.cache_data(show_spinner=False)
-def load_edge_data(gene_name):
-    file_path = 'data/Gene-Gene Interaction/BIOGRID-ORGANISM-Homo_sapiens-4.4.229.tab3.txt'
-    
+def load_edge_data(gene1, gene2):
+    file_path = './data/Gene-Gene Interaction/BIOGRID-ORGANISM-Homo_sapiens-4.4.229.tab3.txt'
     cols_to_load = ['Official Symbol Interactor A', 'Official Symbol Interactor B', 'Experimental System Type', 'Author', 'Publication Source']
     df = pd.read_csv(file_path, sep='\t', usecols=cols_to_load)
     
-    interactions = df[((df['Official Symbol Interactor A'] == gene_name) | 
-                       (df['Official Symbol Interactor B'] == gene_name))]
+    condition1 = ((df['Official Symbol Interactor A'] == gene1) & (df['Official Symbol Interactor B'] == gene2))
+    condition2 = ((df['Official Symbol Interactor A'] == gene2) & (df['Official Symbol Interactor B'] == gene1))
+    interactions = df[condition1 | condition2]
     
-    interactions = interactions.drop_duplicates()
-
     base_url = 'https://pubmed.ncbi.nlm.nih.gov/'
     interactions['Publication Source Number'] = base_url + interactions['Publication Source'].str.replace('PUBMED:', '') + '/'
     
+    interactions = interactions[['Official Symbol Interactor A', 'Official Symbol Interactor B', 'Experimental System Type', 'Author', 'Publication Source', 'Publication Source Number']]
+
     return interactions
 
-def show_edge_info(gene_name):
-    st.subheader(f"**Identification of genes associated with '{gene_name}'**")
+def show_edge_info():
+    node = st.session_state.get('node', [])
+    if not node:
+        st.warning("No gene data available.")
+        return
 
-    gene_name_1 = st.selectbox("", [gene_name])
+    gene_list = ', '.join([f"'{gene}'" for gene in node])
 
-    interactions_1 = load_edge_data(gene_name_1)
-    connected_genes_1 = set(interactions_1['Official Symbol Interactor A']).union(
-        set(interactions_1['Official Symbol Interactor B']))
-    connected_genes_1.discard(gene_name_1)  
-    sorted_connected_genes_1 = sorted(list(connected_genes_1))
-
-    gene_name_2 = st.multiselect("Choose the gene name which you want to see information", sorted_connected_genes_1, key='second_genes')
+    st.subheader(f"**Identification of genes associated with {gene_list}**")
     
-    _, col2 = st.columns([8, 1])
-    with col2:
-        apply_clicked = st.button('Show')
+    edges = []
+    edge = st.session_state.get('edge', [])
+    for item in edge:
+        if item['to'] == st.session_state['gene_name']:
+            edges.append(f'{item['to']} - {item['from']}')
+        else:
+            edges.append(f'{item['from']} - {item['to']}')
 
-    if apply_clicked:
-        if len(gene_name_2) > 0:
-            interactions_final = pd.DataFrame()
-            for g in gene_name_2:
-                interactions_2 = interactions_1[((interactions_1['Official Symbol Interactor A'] == g) |
-                                                (interactions_1['Official Symbol Interactor B'] == g))]
-                interactions_final = pd.concat([interactions_final, interactions_2])
-                interactions_final['Link Title'] = interactions_final['Publication Source Number'].apply(get_link_title)
-            if not interactions_final.empty:
-                st.write(f"{gene_name_1}와 {', '.join(gene_name_2)} interaction edge information:")
-                st.dataframe(
-                    interactions_final,
-                    hide_index=True,
-                    column_config={
-                        'Publication Source Number' : st.column_config.LinkColumn(display_text='🔗')
-                    }
-                )
-            else:
-                st.write(interactions_final)
+    edge_options = ['Choose the interaction which you want to see information.'] + sorted(edges)
+    gene_list_1 = st.selectbox("", edge_options, index=0)
+
+    if gene_list_1 == 'Choose the interaction which you want to see information.':
+        return  
+    elif gene_list_1 != 'Choose the interaction which you want to see information.':  
+        parts = gene_list_1.split(' - ')
+        first = parts[0]
+        to = parts[1]
+
+        interactions_1 = load_edge_data(first, to)
+        interactions_final = interactions_1[(interactions_1['Official Symbol Interactor B'] == to) | (interactions_1['Official Symbol Interactor A'] == to)]
+        interactions_final['Link Title'] = interactions_final['Publication Source Number'].apply(get_link_title)
+
+        if not interactions_final.empty:
+            st.write(f"Interaction edge information: {gene_list_1}")
+            st.dataframe(
+                interactions_final,
+                hide_index=True,
+                column_config={
+                    'Publication Source Number' : st.column_config.LinkColumn(display_text='🔗')
+                }
+            )
+        else:
+            st.write(interactions_final)
 
 
 def get_link_title(url):

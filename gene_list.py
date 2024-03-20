@@ -248,14 +248,14 @@ def group_format(sample_class):
     return sample_class
 
 @st.cache_data(show_spinner=False)
-def load_edge_data(gene_name, gene_list):
+def load_edge_data(gene1, gene2):
     file_path = './data/Gene-Gene Interaction/BIOGRID-ORGANISM-Homo_sapiens-4.4.229.tab3.txt'
     cols_to_load = ['Official Symbol Interactor A', 'Official Symbol Interactor B', 'Experimental System Type', 'Author', 'Publication Source']
     df = pd.read_csv(file_path, sep='\t', usecols=cols_to_load)
     
-    interactions = df[((df['Official Symbol Interactor A'] == gene_name) & df['Official Symbol Interactor B'].isin(gene_list)) |
-                      ((df['Official Symbol Interactor B'] == gene_name) & df['Official Symbol Interactor A'].isin(gene_list))]
-    interactions = interactions.drop_duplicates()
+    condition1 = ((df['Official Symbol Interactor A'] == gene1) & (df['Official Symbol Interactor B'] == gene2))
+    condition2 = ((df['Official Symbol Interactor A'] == gene2) & (df['Official Symbol Interactor B'] == gene1))
+    interactions = df[condition1 | condition2]
     
     base_url = 'https://pubmed.ncbi.nlm.nih.gov/'
     interactions['Publication Source Number'] = base_url + interactions['Publication Source'].str.replace('PUBMED:', '') + '/'
@@ -273,46 +273,28 @@ def show_edge_info():
     gene_list = ', '.join([f"'{gene}'" for gene in node])
 
     st.subheader(f"**Identification of genes associated with {gene_list}**")
-
-    node_options = ['Choose the gene which you want to see information.'] + sorted(node)
-    gene_list_1 = st.selectbox("First gene", node_options, index=0)
     
-    if gene_list_1 == 'Choose the gene which you want to see information.':
-            return    
-        
+    edges = []
     edge = st.session_state.get('edge', [])
-    opposite_genes = {interaction['to'] for interaction in edge if interaction['from'] == gene_list_1}
-    opposite_genes.update({interaction['from'] for interaction in edge if interaction['to'] == gene_list_1})
+    for item in edge:
+        edges.append(f'{item['from']} - {item['to']}')
 
-    if not opposite_genes:
-        st.info("No interactions found for the selected gene.")
-        return
-    
-    st.success(f'You can choose from these genes: {", ".join(sorted(opposite_genes))}')
-        
-    gene_list_2 = st.text_input('Second gene ( Type the gene name which you want to see information. )')
-    if gene_list_2.strip():  # 입력값이 있는지 확인
-        gene_list_2 = re.split('[ ,\t\n]+', gene_list_2.strip())
-        gene_list_2 = [s.replace("'", "").replace('"', '') for s in gene_list_2]
-        gene_list_2_set = set(gene_list_2)
-        invalid_genes = gene_list_2_set - opposite_genes  # set 연산을 사용하여 불일치하는 유전자 식별
-        
-        if invalid_genes:
-            for gene_name in invalid_genes:
-                st.error(f'Gene name "{gene_name}" is not valid. Please type valid gene names.')
-                break
+    edge_options = ['Choose the interaction which you want to see information.'] + sorted(edges)
+    gene_list_1 = st.selectbox("", edge_options, index=0)
 
-    _, col2 = st.columns([8, 1])
-    with col2:
-        apply_clicked = st.button('Show')
-        
-    if apply_clicked and gene_list_2:
-        interactions_1 = load_edge_data(gene_list_1, list(opposite_genes))
-        interactions_final = interactions_1[interactions_1['Official Symbol Interactor B'].isin(gene_list_2) | interactions_1['Official Symbol Interactor A'].isin(gene_list_2)]
+    if gene_list_1 == 'Choose the interaction which you want to see information.':
+        return  
+    elif gene_list_1 != 'Choose the interaction which you want to see information.':  
+        parts = gene_list_1.split(' - ')
+        first = parts[0]
+        to = parts[1]
+
+        interactions_1 = load_edge_data(first, to)
+        interactions_final = interactions_1[(interactions_1['Official Symbol Interactor B'] == to) | (interactions_1['Official Symbol Interactor A'] == to)]
         interactions_final['Link Title'] = interactions_final['Publication Source Number'].apply(get_link_title)
 
         if not interactions_final.empty:
-            st.write(f"Interaction edge information: {gene_list_1} & {', '.join(gene_list_2)} ")
+            st.write(f"Interaction edge information: {gene_list_1}")
             st.dataframe(
                 interactions_final,
                 hide_index=True,
