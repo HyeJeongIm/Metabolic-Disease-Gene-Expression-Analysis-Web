@@ -109,7 +109,6 @@ def show_heatmap(genes_list, base_path):
 '''
     network
 '''
-        
 def show_legend():
     legend_html = """
     <div style="position: fixed; top: 10px; right: 10px; background-color: white; padding: 10px; border-radius: 10px; border: 1px solid #e1e4e8;">
@@ -157,7 +156,7 @@ def plot_initial_pyvis(genes_list):
 
     st.session_state['node'] = net.get_nodes()
     st.session_state['edge'] = net.get_edges()
-        
+
 def plot_colored_network(df_interactions, df_correlation_filtered, genes_list):
     net = Network(notebook=True, directed=False)
     
@@ -186,7 +185,7 @@ def plot_colored_network(df_interactions, df_correlation_filtered, genes_list):
         st.session_state['node'] = net.get_nodes()
     if 'edge' not in st.session_state:
         st.session_state['edge'] = net.get_edges()    
-    
+
 def show_network_diagram(genes_list, group, threshold=0.9):  
     if group == 'no specific group':
         with st.spinner('It may takes a few minutes'):

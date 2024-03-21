@@ -5,7 +5,6 @@ import os
 from pyvis.network import Network
 import streamlit.components.v1 as components
 import data_loader
-   
 
 def show_legend():
     legend_html = """
@@ -59,8 +58,7 @@ def show_network(filtered_df):
         HtmlFile.close()
     else:
         st.error('No data to display.')
-    
-        
+
 def create_group_network(df, bgcolor='#ffffff', font_color='black'):
     net = Network(height='750px', width='100%', bgcolor=bgcolor, font_color=font_color)
     for index, row in df.iterrows():
@@ -106,7 +104,7 @@ def show_group_legend(group_names):
     </div>
     """
     components.html(legend_html, height=100)  
-    
+
 def show_combined_network(selected_groups, threshold):
     combined_df = data_loader.load_group_data(selected_groups, threshold)
     
@@ -199,7 +197,6 @@ def show_correlation(samples, threshold):
     else:
         st.error("Please select one or two groups.")        
 
-
 # 데이터프레임 다운로드 함수
 st.cache_data(show_spinner=False)
 def download_button(df):
@@ -211,11 +208,9 @@ def download_button(df):
     href = f'<a href="data:file/csv;base64,{b64}" download="data.csv" style="float: right; position: relative; top: -50px;"><button style="background-color: #FF4B4B; border: none; color: white; padding: 10px 12px; text-align: center; text-decoration: none; display: inline-block; font-size: 16px; margin: 4px 2px; cursor: pointer; border-radius: 12px;">Download CSV File</button></a>'
     st.markdown(href, unsafe_allow_html=True)
 
-        
 def color_rows(s):
     return ['color: white'] * len(s)
 
-        
 def show_df(selected_groups, threshold):
     combined_df = data_loader.load_group_data(selected_groups, threshold)
     # 인덱스를 리셋하고, 기존 인덱스를 제거합니다.
@@ -240,7 +235,7 @@ def show_df(selected_groups, threshold):
     st.write(f"### Group: Both")
     df_black = df_black.rename(columns=gene_column)
     st.dataframe(df_black.style.apply(color_rows, axis=1), width=600, hide_index=True)
-    
+
 def color_rows(row):
     styles = []
 

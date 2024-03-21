@@ -1,10 +1,9 @@
 import streamlit as st
 import co_expression
-import pandas as pd
 import data_loader
+
 def create_header():
     st.title('Co-expression Network Analysis')
-
 
 def create_search_bar():
     if 'co_pressed' not in st.session_state:

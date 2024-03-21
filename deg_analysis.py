@@ -5,55 +5,8 @@ import plotly.graph_objects as go
 import os
 import numpy as np
 import streamlit.components.v1 as components
+import data_loader
 
-def create_header():
-    st.title('DEG Analysis')
-                
-def create_search_area():
-    # selectbox를 위한 값 선언
-    sample_class = ['Adipose [LH]', 'Adipose [OH]', 'Adipose [OD]',
-              'Liver [LH]', 'Liver [OH]', 'Liver [OD]',
-              'Muscle [LH]', 'Muscle [OH]', 'Muscle [OD]']
-    p_value = [0.05, 0.01, 0.001]
-    fold_change = [1.5, 2, 3]
-    pathway = ['Pathway', 'GO', 'Hallmark']
-
-    # search box들
-    sample_choice = st.multiselect('Choose two groups', sample_class, max_selections=2, key='sample_input')
-    p_value_choice = st.selectbox('Choose the p-value', p_value, key='p_value_input')
-    fold_change_choice = st.selectbox('Choose the Fold-change', fold_change, key='fold_change_input')
-    pathway_choice = st.multiselect('Choose the pathway', pathway, key='pathway_input')
-
-    if st.button('Search'):
-        samples = format_sample(sample_choice)
-        plot_pca(samples)
-        plot_volcano(samples, p_value_choice, fold_change_choice)
-        plot_pathway(samples[0], samples[1], p_value_choice, fold_change_choice, pathway_choice)
-
-    # session_state 때문에 죽여둠
-    # if st.button('Search'):
-    #     st.session_state['search_pressed'] = True
-        
-    # 검색이 수행된 후에만 수행
-    # if 'search_pressed' in st.session_state and st.session_state['search_pressed']:
-    #     plot_pca(sample_choice)
-    #     plot_volcano(sample_choice, p_value_choice, fold_change_choice)
-        
-def format_sample(sample_choice):
-    for key in range(len(sample_choice)):
-        start_idx = sample_choice[key].find("[")  # "["의 인덱스 찾기
-        end_idx = sample_choice[key].find("]")  # "]"의 인덱스 찾기
-        if start_idx != -1 and end_idx != -1:  # "["와 "]"가 모두 존재하는 경우
-            sample_choice[key] = sample_choice[key][:start_idx-1] + sample_choice[key][start_idx+1:end_idx]
-    return sample_choice
-
-def format_sample_original(sample_choice):
-    group =[]
-    for i in range(len(sample_choice)):
-        group.append(sample_choice[i][:-2] + ' [' + sample_choice[i][-2:] + ']')
-
-    return group
-        
 def plot_pca(sample_choice):
     # PCA에 사용할 데이터 파일 불러오기
     coordinate_path = f'./data/PCA/PCACoordinate_{sample_choice[0]}_VS_{sample_choice[1]}.txt'
@@ -185,7 +138,7 @@ def plot_volcano(sample_choice, p_value_choice, fold_change_choice):
     plot_heatmap(df, sample_choice)
 
 def show_table(df, sample_choice, txt, deg_type):
-    group = format_sample_original(sample_choice)
+    group = data_loader.format_sample_original(sample_choice)
 
     st.write(f'##### Log₂ Fold-change {txt}, ({deg_type} in {group[1]})')
 
@@ -211,9 +164,8 @@ def show_table(df, sample_choice, txt, deg_type):
             'P-value' : st.column_config.NumberColumn(format='%.6e')
         })
 
-
 def show_legend(sample_choice):
-    group = format_sample_original(sample_choice)
+    group = data_loader.format_sample_original(sample_choice)
 
     legend_html = f"""
     <div style="position: fixed; top: 55px; right: 10px; background-color: white; padding: 10px; border-radius: 10px; border: 1px solid #e1e4e8;">
@@ -257,16 +209,11 @@ def plot_heatmap(df, sample_choice):
     df_smaple0 = pd.DataFrame(sample0_data)
     df_smaple1 = pd.DataFrame(sample1_data)
 
-    # 이 부분은 나중에 혹시 그룹 클러스터링을 위해 남겨둠
-    # df_smaple0 = df_smaple0.add_suffix(f'_{sample_choice[0]}')
-    # df_smaple1 = df_smaple1.add_suffix(f'_{sample_choice[1]}')
-
     df_smaple0 = df_smaple0.rename(columns={f'Gene name_{sample_choice[0]}' : 'Gene name'})
     df_smaple1 = df_smaple1.rename(columns={f'Gene name_{sample_choice[1]}' : 'Gene name'})
 
     # 히트맵 그릴 데이터프레임
     merged_df = pd.merge(filtered_df, df_smaple0, on='Gene name')
-    # merged_df.set_index('Gene name', inplace=True)
     final_df = pd.merge(merged_df, df_smaple1, on='Gene name')
 
     colorscale = [
@@ -327,20 +274,6 @@ def plot_heatmap(df, sample_choice):
         )
     )
 
-    # x축 타이틀 설정
-    # fig.add_annotation(
-    #     xref="paper",
-    #     yref="paper",
-    #     x=0.5,
-    #     y=-0.1,
-    #     text="Samples",
-    #     showarrow=False,
-    #     font=dict(
-    #         size=15,
-    #     )
-    # )
-
-
     if len(final_df) > max_genes_display:
         layout.update(yaxis=dict(visible=False))
         fig.update_yaxes(showticklabels=False)
@@ -398,32 +331,3 @@ def plot_pathway(group1, group2, p_value, fold_change, categories):
 
             except FileNotFoundError:
                 st.error(f"File not found: {file_path}")
-
-### 같은 category에 대해 "All", group1, group2 순서대로 결과를 표시
-# def plot_pathway(group1, group2, p_value, fold_change, categories):
-#     base_path = "data/DEG Pathway Enrichment Result/"
-#     file_suffix = f"{group1}_VS_{group2}_p{p_value}_fc{fold_change}"
-#     group_labels = ["All", group1, group2]
-
-#     for category in categories:
-#         for group_label in group_labels:
-#             file_path = f"{base_path}DEGPathwayEnrichment_{file_suffix}_{group_label}.txt"
-#             try:
-#                 data = []  # 데이터를 저장할 리스트
-#                 with open(file_path, 'r') as file:
-#                     for line in file:
-#                         parts = line.strip().split('\t')
-#                         # 첫 8개 컬럼만 추출 (더 많은 컬럼이 있으면 무시)
-#                         if len(parts) >= 8:
-#                             data.append(parts[:8])
-#                 columns = data[0]
-#                 df = pd.DataFrame(data[1:], columns=columns)
-#                 df = df.drop(columns=['Size (overlapping with base)'])  # Size 컬럼 제외
-#                 st.write(f"### {category} Enrichment for {group_label}")
-#                 st.dataframe(df)  # 데이터 프레임 표시
-#             except FileNotFoundError:
-#                 st.error(f"File not found: {file_path}")  
-
-def write_deg_page():
-    create_header()
-    create_search_area()
