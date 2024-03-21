@@ -172,14 +172,14 @@ def show_network_diagram(gene_name, group, threshold=0.9):
                     with st.spinner('It may takes a few minutes'):
                         plot_initial_pyvis(df_interactions, gene_name)
                 else:
-                    with st.spinner('It may takes a few minutes'):
-                        formatted_group = data_loader.group_format(group)
-                        try:
-                            df_correlation = data_loader.load_correlation_data(formatted_group, threshold[0])
-                            show_legend()
-                            plot_colored_network(df_interactions, df_correlation, gene_name)
-                        except FileNotFoundError:
-                            st.error(f"No data file found for the group '{group}' with the selected threshold. Please adjust the threshold or choose a different group.")
+                    # with st.spinner('It may takes a few minutes'):
+                    formatted_group = data_loader.group_format(group)
+                    try:
+                        df_correlation = data_loader.load_correlation_data(formatted_group, threshold[0])
+                        show_legend()
+                        plot_colored_network(df_interactions, df_correlation, gene_name)
+                    except FileNotFoundError:
+                        st.error(f"No data file found for the group '{group}' with the selected threshold. Please adjust the threshold or choose a different group.")
 
 '''
     edge info
