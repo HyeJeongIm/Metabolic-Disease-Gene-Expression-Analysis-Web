@@ -6,41 +6,18 @@ from plotly.subplots import make_subplots
 from pyvis.network import Network
 import streamlit.components.v1 as components
 from itertools import combinations 
-from one_gene_search import custom_sort_key
-from one_gene_search import group_format
-import requests
-from bs4 import BeautifulSoup
-import re
+import data_loader
 
 '''
     heatmap
 '''
-@st.cache_data(show_spinner=False)
-def custom_sort_key(file_name):
-    """
-    파일 이름을 기반으로 정렬하기 위한 사용자 정의 키 함수.
-    먼저 조직 이름으로 정렬하고, 그 다음 LH, OH, OD 순서로 정렬한다.
-    """
-    for prefix in ['GeneExpressionZ_']:
-        if file_name.startswith(prefix):
-            file_name = file_name[len(prefix):]
-            break
-
-    parts = file_name.replace('.txt', '').split('_')
-    tissue = parts[0]  # 조직 이름
-    condition = parts[1]  # 상태
-
-    # 순서 정의
-    condition_order = {'LH': 1, 'OH': 2, 'OD': 3}
-
-    return (tissue, condition_order.get(condition, 99))
 
 def show_heatmap(genes_list, base_path):
     st.subheader('Heatmap')
 
     if genes_list:
         file_list = os.listdir(base_path)
-        sorted_files = sorted(file_list, key=custom_sort_key)
+        sorted_files = sorted(file_list, key=data_loader.custom_sort_key)
 
         modified_file_list = [
             file.replace('GeneExpressionZ_', '').replace('_', ' [')[:-4] + ']' if file.endswith('.txt') else file
@@ -132,20 +109,6 @@ def show_heatmap(genes_list, base_path):
 '''
     network
 '''
-@st.cache_data(show_spinner=False)
-def load_network_data():
-    folder_path = './data/Gene-Gene Interaction/BIOGRID-ORGANISM-Homo_sapiens-4.4.229.tab3.txt'
-    cols_to_load = ['Official Symbol Interactor A', 'Official Symbol Interactor B']
-    df_interactions = pd.read_csv(folder_path, sep='\t', usecols=cols_to_load)
-    
-    return df_interactions
-
-@st.cache_data(show_spinner=False)
-def load_correlation_data(group, threshold):
-    file_path = f'data/Gene-Gene Expression Correlation/Correlation Higher Than 0.5/GeneGene_HighCorrelation_{group}_0.5.txt'
-    df_correlation = pd.read_csv(file_path, sep='\t')
-    df_correlation_filtered = df_correlation[df_correlation['Correlation coefficient'].abs() >= threshold]
-    return df_correlation_filtered
         
 def show_legend():
     legend_html = """
@@ -170,7 +133,7 @@ def show_legend():
     components.html(legend_html, height=100) 
 
 def plot_initial_pyvis(genes_list):
-    df_interactions = load_network_data()
+    df_interactions = data_loader.load_gene_list_interaction_data()
     net = Network(notebook=True, directed=False)
 
     interactions_set = set(map(frozenset, df_interactions.to_numpy()))
@@ -230,39 +193,14 @@ def show_network_diagram(genes_list, group, threshold=0.9):
             plot_initial_pyvis(genes_list)
     else:
         with st.spinner('It may takes a few minutes'):
-            formatted_group = group_format(group)
+            formatted_group = data_loader.group_format(group)
             try:
-                df_correlation = load_correlation_data(formatted_group, threshold)
+                df_correlation = data_loader.load_correlation_data(formatted_group, threshold)
                 show_legend()
-                df_interactions = load_network_data()
+                df_interactions = data_loader.load_gene_list_interaction_data()
                 plot_colored_network(df_interactions, df_correlation, genes_list)
             except FileNotFoundError:
                 st.error(f"No data file found for the group '{group}' with the selected threshold. Please adjust the threshold or choose a different group.")
-
-def group_format(sample_class):
-    start_idx = sample_class.find("[")  # "["의 인덱스 찾기
-    end_idx = sample_class.find("]")  # "]"의 인덱스 찾기
-    if start_idx != -1 and end_idx != -1:  # "["와 "]"가 모두 존재하는 경우
-        sample_class = sample_class[:start_idx-1] + '_' + sample_class[start_idx+1:end_idx]
-
-    return sample_class
-
-@st.cache_data(show_spinner=False)
-def load_edge_data(gene1, gene2):
-    file_path = './data/Gene-Gene Interaction/BIOGRID-ORGANISM-Homo_sapiens-4.4.229.tab3.txt'
-    cols_to_load = ['Official Symbol Interactor A', 'Official Symbol Interactor B', 'Experimental System Type', 'Author', 'Publication Source']
-    df = pd.read_csv(file_path, sep='\t', usecols=cols_to_load)
-    
-    condition1 = ((df['Official Symbol Interactor A'] == gene1) & (df['Official Symbol Interactor B'] == gene2))
-    condition2 = ((df['Official Symbol Interactor A'] == gene2) & (df['Official Symbol Interactor B'] == gene1))
-    interactions = df[condition1 | condition2]
-    
-    base_url = 'https://pubmed.ncbi.nlm.nih.gov/'
-    interactions['Publication Source Number'] = base_url + interactions['Publication Source'].str.replace('PUBMED:', '') + '/'
-    
-    interactions = interactions[['Official Symbol Interactor A', 'Official Symbol Interactor B', 'Experimental System Type', 'Author', 'Publication Source', 'Publication Source Number']]
-
-    return interactions
 
 def show_edge_info():
     node = st.session_state.get('node', [])
@@ -277,7 +215,7 @@ def show_edge_info():
     edges = []
     edge = st.session_state.get('edge', [])
     for item in edge:
-        edges.append(f'{item['from']} - {item['to']}')
+        edges.append(f"{item['from']} - {item['to']}")
 
     edge_options = ['Choose the interaction which you want to see information.'] + sorted(edges)
     gene_list_1 = st.selectbox("", edge_options, index=0)
@@ -289,9 +227,9 @@ def show_edge_info():
         first = parts[0]
         to = parts[1]
 
-        interactions_1 = load_edge_data(first, to)
+        interactions_1 = data_loader.load_edge_data(first, to)
         interactions_final = interactions_1[(interactions_1['Official Symbol Interactor B'] == to) | (interactions_1['Official Symbol Interactor A'] == to)]
-        interactions_final['Link Title'] = interactions_final['Publication Source Number'].apply(get_link_title)
+        interactions_final['Link Title'] = interactions_final['Publication Source Number'].apply(data_loader.get_link_title)
 
         if not interactions_final.empty:
             st.write(f"Interaction edge information: {gene_list_1}")
@@ -304,15 +242,3 @@ def show_edge_info():
             )
         else:
             st.write(interactions_final)
-                
-def get_link_title(url):
-    try:
-        response = requests.get(url)
-        if response.status_code == 200:
-            soup = BeautifulSoup(response.text, 'html.parser')
-            title = soup.title.string
-            title = title.replace('- PubMed', '')
-            return title
-    except Exception as e:
-        print(f'Error fetching title for link {url}: {str(e)}')
-    return None

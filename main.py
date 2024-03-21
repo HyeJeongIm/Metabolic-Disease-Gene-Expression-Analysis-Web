@@ -1,6 +1,6 @@
 import streamlit as st
 from streamlit_option_menu import option_menu
-import main_page, gene_search_page, gene_list_page, deg_page, co_expression_page
+import main_page, one_gene_search_page, gene_list_page, deg_page, co_expression_page
 
 st.set_page_config(
     page_title="Metabolic Disease",
@@ -24,7 +24,7 @@ def create_layout():
     if page == 'Main':
         main_page.write_main_page()
     elif page == 'Gene Search':
-        gene_search_page.write_main_page()
+        one_gene_search_page.write_one_gene_search_page()
     elif page == 'Gene List Search':
         gene_list_page.write_gene_list_page()
     elif page == 'DEG Analysis':
