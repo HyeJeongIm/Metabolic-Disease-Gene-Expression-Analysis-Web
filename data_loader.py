@@ -3,7 +3,7 @@ import streamlit as st
 import requests
 from bs4 import BeautifulSoup
 import re 
-
+import os
 def check_gene_name(gene_name):
     path = 'data/Gene Expression/Raw/GeneExpression_Adipose_LH.txt'
 
@@ -74,6 +74,14 @@ def group_format(sample_class):
 
     return sample_class
 
+def co_group_format(sample_choice):
+    for key in range(len(sample_choice)):
+        start_idx = sample_choice[key].find("[")  # "["의 인덱스 찾기
+        end_idx = sample_choice[key].find("]")  # "]"의 인덱스 찾기
+        if start_idx != -1 and end_idx != -1:  # "["와 "]"가 모두 존재하는 경우
+            sample_choice[key] = sample_choice[key][:start_idx-1] + '_' + sample_choice[key][start_idx+1:end_idx]
+    return sample_choice
+
 @st.cache_data(show_spinner=False)
 def custom_sort_key(file_name):
     """
@@ -94,6 +102,13 @@ def custom_sort_key(file_name):
 
     return (tissue, condition_order.get(condition, 99))
 
+def format_group_name(name):
+        # 그룹 이름의 마지막 2글자를 대괄호로 묶어서 반환
+        if len(name) > 2:
+            name = f"{name[:-2]} [{name[-2:]}]".replace("_", " ")
+            return name
+        else:
+            return name
 '''
     data
 '''
@@ -151,3 +166,31 @@ def load_edge_data(gene1, gene2):
     interactions['Publication Source Number'] = interactions['Publication Source'].apply(lambda x: base_url_pubmed + x.replace('PUBMED:', '') + '/' if 'PUBMED:' in x else base_url_doi + x)
     
     return interactions
+
+@st.cache_data(show_spinner=False)
+def load_group_data(group_names, threshold):
+    combined_df = pd.DataFrame()
+    # 각 그룹별로 색상 지정
+    group_colors = {group_names[0]: 'green', group_names[1]: 'orange', 'overlap': 'black'}
+    
+    group_data = {}
+    for group in group_names:
+        file_path = f'data/Gene-Gene Expression Correlation/Correlation Higher Than 0.5/GeneGene_HighCorrelation_{group}_0.5.txt'
+        
+        if os.path.exists(file_path):
+            df = pd.read_csv(file_path, sep='\t')
+            filtered_df = df[df['Correlation coefficient'].abs() >= threshold]
+            group_data[group] = filtered_df[['Gene', 'Gene.1']].apply(frozenset, axis=1).to_list()
+            filtered_df['color'] = group_colors[group]
+            combined_df = pd.concat([combined_df, filtered_df], ignore_index=True)
+        else:
+            st.error(f'파일이 존재하지 않습니다: {file_path}')
+            return pd.DataFrame()
+
+    # 겹치는 유전자 쌍을 찾아서 색상을 변경
+    if len(group_names) == 2:
+        overlap = set(group_data[group_names[0]]).intersection(set(group_data[group_names[1]]))
+        for idx, row in combined_df.iterrows():
+            if frozenset([row['Gene'], row['Gene.1']]) in overlap:
+                combined_df.at[idx, 'color'] = group_colors['overlap']
+    return combined_df   
