@@ -119,11 +119,11 @@ def show_correlation(samples, threshold):
     st.subheader("Co-expression Network")  
 
     if len(samples) == 1:
-        with st.spinner('it may takes a few minutes'):
+        with st.spinner('It may takes a few minutes'):
             group = samples[0]
             file_path = os.path.join('data', 'Gene-Gene Expression Correlation', 'Correlation Higher Than 0.5', f'GeneGene_HighCorrelation_{group}_0.5.txt')
         if os.path.isfile(file_path):
-            with st.spinner('it may takes a few minutes'):
+            with st.spinner('It may takes a few minutes'):
                 filtered_df = data_loader.load_correlation_data(group, threshold)
                 filtered_df = filtered_df.rename(columns={'Gene': 'Gene1', 'Gene.1': 'Gene2'})
                 
@@ -147,14 +147,14 @@ def show_correlation(samples, threshold):
                                 ''', icon="🚨")
                     else:
                         show_legend()
-                        with st.spinner('it may takes a few minutes'):
+                        with st.spinner('It may takes a few minutes'):
                             show_network(filtered_df)
                             download_button(filtered_df)
         else:
             st.error(f"File for {group} does not exist.")
             
     elif len(samples) == 2:
-        with st.spinner('it may takes a few minutes'):
+        with st.spinner('It may takes a few minutes'):
 
             df_sample0 = data_loader.load_correlation_data(samples[0], threshold)
             df_sample1 = data_loader.load_correlation_data(samples[1], threshold)
@@ -190,7 +190,7 @@ def show_correlation(samples, threshold):
                     ''', icon="🚨")
         else:
             show_group_legend(samples)
-            with st.spinner('it may takes a few minutes'):
+            with st.spinner('It may takes a few minutes'):
                 show_combined_network(samples, threshold)
                 download_button(merged_df)
             show_df(samples, threshold)
