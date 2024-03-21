@@ -149,3 +149,5 @@ def load_edge_data(gene1, gene2):
     base_url_pubmed = 'https://pubmed.ncbi.nlm.nih.gov/'
     base_url_doi = 'https://doi.org/'
     interactions['Publication Source Number'] = interactions['Publication Source'].apply(lambda x: base_url_pubmed + x.replace('PUBMED:', '') + '/' if 'PUBMED:' in x else base_url_doi + x)
+    
+    return interactions
