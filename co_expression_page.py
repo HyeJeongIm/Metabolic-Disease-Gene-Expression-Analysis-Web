@@ -30,7 +30,8 @@ def create_search_bar():
             threshold = float(st.session_state['threshold_str'])
             if threshold < 0.5:
                 st.error('Please try a higher correlation threshold.')
-            co_expression.show_correlation(st.session_state['samples'], threshold)
+            else:
+                co_expression.show_correlation(st.session_state['samples'], threshold)
         except ValueError:
             st.error('Please enter a valid float number.') 
     
