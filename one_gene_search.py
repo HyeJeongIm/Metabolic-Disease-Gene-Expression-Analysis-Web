@@ -9,7 +9,6 @@ import data_loader
 '''
     Box Plot
 '''
-
 def plot_data(combined_df):
     fig = px.box(combined_df, x='file', y='value', color='file', 
                  labels={'value': 'Expression Level', 'file': 'Tissue [Disease status]'})
@@ -64,7 +63,6 @@ def show_box_plot(name, z_score):
 '''
     Interaction Network Diagram
 ''' 
-
 def show_legend():
     legend_html = """
     <div style="position: fixed; top: 10px; right: 10px; background-color: white; padding: 10px; border-radius: 10px; border: 1px solid #e1e4e8;">
@@ -86,7 +84,7 @@ def show_legend():
     </div>
     """
     components.html(legend_html, height=100) 
-    
+
 def plot_initial_pyvis(df, gene_name):
     net = Network(notebook=True, directed=False)
     seen_nodes = set()  
@@ -108,7 +106,7 @@ def plot_initial_pyvis(df, gene_name):
 
     st.session_state['node'] = net.get_nodes()
     st.session_state['edge'] = net.get_edges()
-    
+
 def plot_colored_network(df_interactions, df_correlation, gene_name):
     # with st.spinner('It may takes few minutes'):
         net = Network(notebook=True, directed=False, cdn_resources='remote')
@@ -148,7 +146,7 @@ def plot_colored_network(df_interactions, df_correlation, gene_name):
         HtmlFile = open('one_gene_search_graph.html', 'r', encoding='utf-8')
         source_code = HtmlFile.read() 
         st.components.v1.html(source_code, width=670, height=610)
-     
+
 def show_network_diagram(gene_name, group, threshold=0.9):
     with st.spinner('It may takes a few minutes'):
             df_interactions = data_loader.load_interaction_data(gene_name)
@@ -182,10 +180,10 @@ def show_network_diagram(gene_name, group, threshold=0.9):
                             plot_colored_network(df_interactions, df_correlation, gene_name)
                         except FileNotFoundError:
                             st.error(f"No data file found for the group '{group}' with the selected threshold. Please adjust the threshold or choose a different group.")
+
 '''
     edge info
 '''
-
 def show_edge_info():
     node = st.session_state.get('node', [])
     if not node:

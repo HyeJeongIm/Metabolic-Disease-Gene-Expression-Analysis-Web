@@ -110,7 +110,7 @@ def get_threshold(threshold_key, group):
                 return [0, group]
             st.error('Please enter a valid float number.')
             return [group]     
-    
+
 def write_main_page():
     if 'search_pressed' in st.session_state and st.session_state['search_pressed']:
         create_header(st.session_state['gene_name'])

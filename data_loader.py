@@ -74,6 +74,21 @@ def group_format(sample_class):
 
     return sample_class
 
+def format_sample_original(sample_choice):
+    group =[]
+    for i in range(len(sample_choice)):
+        group.append(sample_choice[i][:-2] + ' [' + sample_choice[i][-2:] + ']')
+
+    return group
+
+def format_sample(sample_choice):
+    for key in range(len(sample_choice)):
+        start_idx = sample_choice[key].find("[")  # "["의 인덱스 찾기
+        end_idx = sample_choice[key].find("]")  # "]"의 인덱스 찾기
+        if start_idx != -1 and end_idx != -1:  # "["와 "]"가 모두 존재하는 경우
+            sample_choice[key] = sample_choice[key][:start_idx-1] + sample_choice[key][start_idx+1:end_idx]
+    return sample_choice
+
 def co_group_format(sample_choice):
     for key in range(len(sample_choice)):
         start_idx = sample_choice[key].find("[")  # "["의 인덱스 찾기

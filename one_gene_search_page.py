@@ -1,7 +1,5 @@
 import streamlit as st
 import one_gene_search, data_loader
-import pandas as pd
-import re
 
 def create_header(gene_name=None):
     st.image('images/logo.png', width=100)
@@ -74,5 +72,4 @@ def write_one_gene_search_page():
         create_header(st.session_state['gene_name'])
     else:
         create_header()
-        
     create_one_gene_search_bar()
