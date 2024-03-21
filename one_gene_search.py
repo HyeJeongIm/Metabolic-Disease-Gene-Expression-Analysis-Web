@@ -151,21 +151,37 @@ def plot_colored_network(df_interactions, df_correlation, gene_name):
      
 def show_network_diagram(gene_name, group, threshold=0.9):
     with st.spinner('It may takes a few minutes'):
-            df_interactions = data_loader.load_interaction_data(gene_name)
+            df_interactions = data_loader.load_network_data(gene_name)
 
-    if group == 'no specific group':
-        with st.spinner('It may takes a few minutes'):
-            plot_initial_pyvis(df_interactions, gene_name)
-    else:
-        with st.spinner('It may takes a few minutes'):
-            formatted_group = data_loader.group_format(group)
-            try:
-                df_correlation = data_loader.load_correlation_data(formatted_group, threshold[0])
-                show_legend()
-                plot_colored_network(df_interactions, df_correlation, gene_name)
-            except FileNotFoundError:
-                st.error(f"No data file found for the group '{group}' with the selected threshold. Please adjust the threshold or choose a different group.") 
-
+            if len(df_interactions) > 6170 and len(df_interactions) < 4900000:
+                # (Edges to draw: XXXX, )
+                st.error(f'''
+                        \n
+                        Sorry, we can\'t draw a network with more than 6,170 edges. (Edges to draw: {format(len(df_interactions), ',')})\n
+                        Please try a higher correlation threshold.\n
+                        Data that needs to be drawn can be downloaded via the Download button. \n
+                        ''', icon="🚨")
+                st.markdown("""<br>""" * 2, unsafe_allow_html=True)
+            elif len(df_interactions) > 4900000:
+                st.error(f'''
+                        \n
+                        Sorry, we can\'t draw a network with more than 6,170 edges. (Edges to draw: {format(len(df_interactions), ',')})\n
+                        Also, we can't make data file with more than 4,900,000 edges.\n
+                        Please try a higher correlation threshold.\n
+                        ''', icon="🚨")
+            else:
+                if group == 'no specific group':
+                    with st.spinner('It may takes a few minutes'):
+                        plot_initial_pyvis(df_interactions, gene_name)
+                else:
+                    with st.spinner('It may takes a few minutes'):
+                        formatted_group = data_loader.group_format(group)
+                        try:
+                            df_correlation = data_loader.load_correlation_data(formatted_group, threshold[0])
+                            show_legend()
+                            plot_colored_network(df_interactions, df_correlation, gene_name)
+                        except FileNotFoundError:
+                            st.error(f"No data file found for the group '{group}' with the selected threshold. Please adjust the threshold or choose a different group.")
 '''
     edge info
 '''
