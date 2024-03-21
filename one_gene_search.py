@@ -151,7 +151,7 @@ def plot_colored_network(df_interactions, df_correlation, gene_name):
      
 def show_network_diagram(gene_name, group, threshold=0.9):
     with st.spinner('It may takes a few minutes'):
-            df_interactions = data_loader.load_network_data(gene_name)
+            df_interactions = data_loader.load_interaction_data(gene_name)
 
             if len(df_interactions) > 6170 and len(df_interactions) < 4900000:
                 # (Edges to draw: XXXX, )
