@@ -204,6 +204,7 @@ def show_edge_info():
 
     edge_options = ['Choose the interaction which you want to see information.'] + sorted(edges)
     gene_list_1 = st.selectbox("", edge_options, index=0)
+    st.session_state['edges'] = gene_list_1
 
     if gene_list_1 == 'Choose the interaction which you want to see information.':
         return  
