@@ -146,9 +146,6 @@ def load_edge_data(gene1, gene2):
     condition2 = ((df['Official Symbol Interactor A'] == gene2) & (df['Official Symbol Interactor B'] == gene1))
     interactions = df[condition1 | condition2]
     
-    base_url = 'https://pubmed.ncbi.nlm.nih.gov/'
-    interactions['Publication Source Number'] = base_url + interactions['Publication Source'].str.replace('PUBMED:', '') + '/'
-    
-    interactions = interactions[['Official Symbol Interactor A', 'Official Symbol Interactor B', 'Experimental System Type', 'Author', 'Publication Source', 'Publication Source Number']]
-
-    return interactions
+    base_url_pubmed = 'https://pubmed.ncbi.nlm.nih.gov/'
+    base_url_doi = 'https://doi.org/'
+    interactions['Publication Source Number'] = interactions['Publication Source'].apply(lambda x: base_url_pubmed + x.replace('PUBMED:', '') + '/' if 'PUBMED:' in x else base_url_doi + x)
